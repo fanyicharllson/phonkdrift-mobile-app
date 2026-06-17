@@ -1,0 +1,27 @@
+class AppConfig {
+  AppConfig._();
+
+  // === gRPC SERVER ===
+  static const String grpcHost = '167.71.34.119';
+  static const int authGrpcPort = 50051;
+  static const int trackGrpcPort = 50052;
+
+  // === APP META ===
+  static const String appName = 'PhonkDrift';
+  static const String appVersion = '1.0.0';
+  static const String appTagline = 'Welcome to the drift station';
+
+  // === STORAGE KEYS ===
+  static const String keyAuthToken = 'pd_auth_token';
+  static const String keyUserId = 'pd_user_id';
+  static const String keyUsername = 'pd_username';
+  static const String keyTokenExpiry = 'pd_token_expiry';
+  static const String keyPhonkLevel = 'pd_phonk_level';
+  static const String keyPendingVerifyEmail = 'pd_pending_email';
+
+  // === gRPC TIMEOUTS ===
+  static const Duration grpcConnectTimeout = Duration(seconds: 10);
+  static const Duration grpcCallTimeout = Duration(seconds: 15);
+  static const Duration grpcKeepAliveInterval = Duration(seconds: 30);
+  static const Duration grpcKeepAliveTimeout = Duration(seconds: 10);
+}

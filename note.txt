@@ -1,0 +1,4 @@
+protoc --dart_out=grpc:lib/core/network/generated \
+  --proto_path=proto \
+  proto/auth.proto \
+  proto/track.proto
