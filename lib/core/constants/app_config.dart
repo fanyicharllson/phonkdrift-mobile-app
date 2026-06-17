@@ -1,10 +1,9 @@
 class AppConfig {
   AppConfig._();
 
-  // === gRPC SERVER ===
+  // === gRPC GATEWAY — single entry point, gateway routes internally ===
   static const String grpcHost = '167.71.34.119';
-  static const int authGrpcPort = 50051;
-  static const int trackGrpcPort = 50052;
+  static const int grpcPort = 30050; // API Gateway NodePort — all services route through here
 
   // === APP META ===
   static const String appName = 'PhonkDrift';
@@ -22,6 +21,4 @@ class AppConfig {
   // === gRPC TIMEOUTS ===
   static const Duration grpcConnectTimeout = Duration(seconds: 10);
   static const Duration grpcCallTimeout = Duration(seconds: 15);
-  static const Duration grpcKeepAliveInterval = Duration(seconds: 30);
-  static const Duration grpcKeepAliveTimeout = Duration(seconds: 10);
 }

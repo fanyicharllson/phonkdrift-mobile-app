@@ -4,9 +4,9 @@ class AppColors {
   AppColors._();
 
   // === BRAND CORE ===
-  static const Color phonkRed = Color(0xFFE8132A);
-  static const Color phonkRedDark = Color(0xFFB30F22);
-  static const Color phonkRedGlow = Color(0x55E8132A);
+  static const Color phonkRed = Color(0xFFFF0055);
+  static const Color phonkRedDark = Color(0xFFCC0044);
+  static const Color phonkRedGlow = Color(0x55FF0055);
 
   // === BACKGROUNDS ===
   static const Color bgDeep = Color(0xFF0A0A0C);
@@ -18,17 +18,17 @@ class AppColors {
   static const Color textPrimary = Color(0xFFF0F0F5);
   static const Color textSecondary = Color(0xFF8888AA);
   static const Color textMuted = Color(0xFF44445A);
-  static const Color textRed = Color(0xFFE8132A);
+  static const Color textRed = Color(0xFFFF0055);
 
   // === BORDERS ===
   static const Color borderSubtle = Color(0xFF222230);
-  static const Color borderRed = Color(0xFFE8132A);
-  static const Color borderGlow = Color(0x33E8132A);
+  static const Color borderRed = Color(0xFFFF0055);
+  static const Color borderGlow = Color(0x33FF0055);
 
   // === UTILITY ===
   static const Color success = Color(0xFF1DB954);
   static const Color warning = Color(0xFFFFA500);
-  static const Color error = Color(0xFFE8132A);
+  static const Color error = Color(0xFFFF0055);
   static const Color transparent = Colors.transparent;
 
   // === GRADIENTS ===
@@ -40,7 +40,7 @@ class AppColors {
   );
 
   static const LinearGradient redGradient = LinearGradient(
-    colors: [Color(0xFFE8132A), Color(0xFF8B0012)],
+    colors: [Color(0xFFFF0055), Color(0xFF8B0012)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
