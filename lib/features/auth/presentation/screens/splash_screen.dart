@@ -4,6 +4,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/utils/storage_helper.dart';
 import 'onboarding_screen.dart';
 import 'login_screen.dart';
+import 'home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -46,22 +47,45 @@ class _SplashScreenState extends State<SplashScreen>
     );
 
     _controller.forward();
-    Future.delayed(const Duration(milliseconds: 2600), _navigate);
+
+    // Run session check in parallel with animation
+    Future.wait([
+      Future.delayed(const Duration(milliseconds: 2400)),
+      _resolveDestination(),
+    ]).then((results) {
+      final destination = results[1] as Widget;
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          transitionDuration: const Duration(milliseconds: 500),
+          pageBuilder: (_, __, ___) => destination,
+          transitionsBuilder: (_, anim, __, child) =>
+              FadeTransition(opacity: anim, child: child),
+        ),
+      );
+    });
   }
 
-  Future<void> _navigate() async {
-    if (!mounted) return;
-    final isLoggedIn = await StorageHelper.instance.isLoggedIn();
-    if (!mounted) return;
-    Navigator.of(context).pushReplacement(
-      PageRouteBuilder(
-        transitionDuration: const Duration(milliseconds: 500),
-        pageBuilder: (_, __, ___) =>
-            isLoggedIn ? const LoginScreen() : const OnboardingScreen(),
-        transitionsBuilder: (_, anim, __, child) =>
-            FadeTransition(opacity: anim, child: child),
-      ),
-    );
+  /// Returns the correct screen based on session state
+  Future<Widget> _resolveDestination() async {
+    try {
+      final storage = StorageHelper.instance;
+
+      final isLoggedIn = await storage.isLoggedIn();
+      if (!isLoggedIn) {
+        // Check if user has seen onboarding before
+        final hasSeenOnboarding = await storage.hasSeenOnboarding();
+        return hasSeenOnboarding
+            ? const LoginScreen()
+            : const OnboardingScreen();
+      }
+
+      // Token valid — go straight to Home, no login needed
+      return const HomeScreen();
+    } catch (_) {
+      // Any storage error → safe fallback
+      return const LoginScreen();
+    }
   }
 
   @override
@@ -76,7 +100,6 @@ class _SplashScreenState extends State<SplashScreen>
       backgroundColor: AppColors.bgDeep,
       body: Stack(
         children: [
-          // Subtle red glow — perfectly centered
           Align(
             alignment: Alignment.center,
             child: Container(
@@ -93,8 +116,6 @@ class _SplashScreenState extends State<SplashScreen>
               ),
             ),
           ),
-
-          // Logo + tagline — dead center
           Align(
             alignment: Alignment.center,
             child: FadeTransition(
@@ -129,8 +150,6 @@ class _SplashScreenState extends State<SplashScreen>
               ),
             ),
           ),
-
-          // Bottom credit — WhatsApp style
           Positioned(
             bottom: 52,
             left: 0,
@@ -150,7 +169,7 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Charlseempire Tech',
+                    'Fanyicharllson',
                     style: GoogleFonts.inter(
                       fontSize: 13,
                       color: AppColors.textSecondary,

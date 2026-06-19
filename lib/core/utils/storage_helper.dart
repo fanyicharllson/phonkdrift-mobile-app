@@ -10,6 +10,7 @@ class StorageHelper {
     iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
   );
 
+  // ── Write ──────────────────────────────────────────────────────────────────
   Future<void> saveToken(String token) =>
       _storage.write(key: AppConfig.keyAuthToken, value: token);
 
@@ -28,6 +29,9 @@ class StorageHelper {
   Future<void> savePendingEmail(String email) =>
       _storage.write(key: AppConfig.keyPendingVerifyEmail, value: email);
 
+  Future<void> markOnboardingSeen() =>
+      _storage.write(key: AppConfig.keyOnboardingSeen, value: 'true');
+
   Future<void> saveSession({
     required String token,
     required String userId,
@@ -42,6 +46,7 @@ class StorageHelper {
     ]);
   }
 
+  // ── Read ───────────────────────────────────────────────────────────────────
   Future<String?> getToken() => _storage.read(key: AppConfig.keyAuthToken);
   Future<String?> getUserId() => _storage.read(key: AppConfig.keyUserId);
   Future<String?> getUsername() => _storage.read(key: AppConfig.keyUsername);
@@ -49,14 +54,28 @@ class StorageHelper {
   Future<String?> getPendingEmail() =>
       _storage.read(key: AppConfig.keyPendingVerifyEmail);
 
-  Future<bool> isLoggedIn() async {
-    final token = await getToken();
-    final expiry = await _storage.read(key: AppConfig.keyTokenExpiry);
-    if (token == null || expiry == null) return false;
-    final expiryMs = int.tryParse(expiry) ?? 0;
-    return DateTime.now().millisecondsSinceEpoch < expiryMs * 1000;
+  Future<bool> hasSeenOnboarding() async {
+    try {
+      final val = await _storage.read(key: AppConfig.keyOnboardingSeen);
+      return val == 'true';
+    } catch (_) {
+      return false;
+    }
   }
 
+  Future<bool> isLoggedIn() async {
+    try {
+      final token = await getToken();
+      final expiry = await _storage.read(key: AppConfig.keyTokenExpiry);
+      if (token == null || expiry == null) return false;
+      final expiryMs = int.tryParse(expiry) ?? 0;
+      return DateTime.now().millisecondsSinceEpoch < expiryMs * 1000;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // ── Clear ──────────────────────────────────────────────────────────────────
   Future<void> clearSession() async {
     await Future.wait([
       _storage.delete(key: AppConfig.keyAuthToken),

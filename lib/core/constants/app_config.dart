@@ -17,6 +17,7 @@ class AppConfig {
   static const String keyTokenExpiry = 'pd_token_expiry';
   static const String keyPhonkLevel = 'pd_phonk_level';
   static const String keyPendingVerifyEmail = 'pd_pending_email';
+  static const String keyOnboardingSeen = 'pd_onboarding_seen';
 
   // === gRPC TIMEOUTS ===
   static const Duration grpcConnectTimeout = Duration(seconds: 10);

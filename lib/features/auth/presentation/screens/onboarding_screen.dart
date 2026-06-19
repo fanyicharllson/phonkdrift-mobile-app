@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/utils/storage_helper.dart';
 import '../../../../core/widgets/phonk_button.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
@@ -46,13 +47,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     }
   }
 
-  void _goToLogin() => Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-      );
+  Future<void> _goToLogin() async {
+    await StorageHelper.instance.markOnboardingSeen();
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+    );
+  }
 
-  void _goToRegister() => Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const RegisterScreen()),
-      );
+  Future<void> _goToRegister() async {
+    await StorageHelper.instance.markOnboardingSeen();
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const RegisterScreen()),
+    );
+  }
 
   @override
   void dispose() {
@@ -69,7 +78,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Skip — top right
+            // Skip
             Align(
               alignment: Alignment.topRight,
               child: Padding(
@@ -108,7 +117,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Dots
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(
@@ -128,8 +136,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ),
                   ),
                   const SizedBox(height: 28),
-
-                  // Buttons
                   if (!isLast)
                     PhonkButton(
                       label: 'Next',
@@ -181,7 +187,6 @@ class _OnboardPageWidget extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Tighter icon container
           Container(
             width: 64,
             height: 64,
@@ -193,8 +198,6 @@ class _OnboardPageWidget extends StatelessWidget {
             child: Icon(page.icon, color: AppColors.phonkRed, size: 28),
           ),
           const SizedBox(height: 28),
-
-          // Title
           Text(
             page.title,
             style: GoogleFonts.inter(
@@ -206,8 +209,6 @@ class _OnboardPageWidget extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-
-          // Red accent bar
           Container(
             width: 36,
             height: 3,
@@ -217,8 +218,6 @@ class _OnboardPageWidget extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 18),
-
-          // Subtitle
           Text(
             page.subtitle,
             style: GoogleFonts.inter(
