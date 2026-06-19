@@ -68,7 +68,7 @@ class _PrimaryButton extends StatelessWidget {
         boxShadow: onPressed != null
             ? [
                 BoxShadow(
-                  color: AppColors.phonkRed.withOpacity(0.35),
+                  color: AppColors.phonkRed.withValues(alpha: 0.35),
                   blurRadius: 20,
                   spreadRadius: 0,
                   offset: const Offset(0, 6),

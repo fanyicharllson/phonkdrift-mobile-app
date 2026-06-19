@@ -1,17 +1,15 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../constants/app_config.dart';
 
-/// Encrypted keychain wrapper — the only place tokens are read/written.
 class StorageHelper {
   StorageHelper._();
   static final StorageHelper instance = StorageHelper._();
 
   final FlutterSecureStorage _storage = const FlutterSecureStorage(
-    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    aOptions: AndroidOptions(),
     iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
   );
 
-  // ── Write ──────────────────────────────────────────────────────────────────
   Future<void> saveToken(String token) =>
       _storage.write(key: AppConfig.keyAuthToken, value: token);
 
@@ -44,7 +42,6 @@ class StorageHelper {
     ]);
   }
 
-  // ── Read ───────────────────────────────────────────────────────────────────
   Future<String?> getToken() => _storage.read(key: AppConfig.keyAuthToken);
   Future<String?> getUserId() => _storage.read(key: AppConfig.keyUserId);
   Future<String?> getUsername() => _storage.read(key: AppConfig.keyUsername);
@@ -57,11 +54,9 @@ class StorageHelper {
     final expiry = await _storage.read(key: AppConfig.keyTokenExpiry);
     if (token == null || expiry == null) return false;
     final expiryMs = int.tryParse(expiry) ?? 0;
-    // expires_at from backend is Unix seconds
     return DateTime.now().millisecondsSinceEpoch < expiryMs * 1000;
   }
 
-  // ── Clear ──────────────────────────────────────────────────────────────────
   Future<void> clearSession() async {
     await Future.wait([
       _storage.delete(key: AppConfig.keyAuthToken),
