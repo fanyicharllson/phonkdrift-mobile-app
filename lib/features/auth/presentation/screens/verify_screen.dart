@@ -9,6 +9,7 @@ import '../../../../core/network/grpc_client.dart';
 import '../../../../core/utils/error_helper.dart';
 import '../../../../core/widgets/phonk_button.dart';
 import '../../../../core/widgets/phonk_error_banner.dart';
+import '../../../../core/widgets/phonk_toast.dart';
 import 'verify_success_screen.dart';
 
 class VerifyScreen extends StatefulWidget {
@@ -106,14 +107,10 @@ class _VerifyScreenState extends State<VerifyScreen> {
       if (res.success) {
         _pinCtrl.clear();
         _startCooldown();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('A new code has been sent to your email.',
-                style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
+        PhonkToast.show(
+          context,
+          message: 'A new code has been sent to your email.',
+          type: ToastType.success,
         );
       } else {
         _setError('Could not resend the code. Try again shortly.');

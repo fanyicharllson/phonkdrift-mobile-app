@@ -1,9 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Same dark background as our app -->
+    <!-- Dark background matching app -->
     <item>
         <shape android:shape="rectangle">
             <solid android:color="#0A0A0C" />
         </shape>
+    </item>
+    <!-- Wave icon centered -->
+    <item>
+        <bitmap
+            android:gravity="center"
+            android:src="@mipmap/ic_launcher_foreground" />
     </item>
 </layer-list>

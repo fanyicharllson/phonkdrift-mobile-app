@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/phonk_button.dart';
 import '../../../../core/widgets/phonk_error_banner.dart';
+import '../../../../core/widgets/phonk_toast.dart';
 import '../../../../core/utils/storage_helper.dart';
 import '../../../../core/network/grpc_client.dart';
 import '../../../../core/network/generated/auth.pb.dart';
@@ -96,17 +97,10 @@ class _LoginScreenState extends State<LoginScreen> {
         MaterialPageRoute(builder: (_) => const HomeScreen()),
         (_) => false,
       );
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Logged in successfully.',
-            style: GoogleFonts.inter(fontWeight: FontWeight.w500),
-          ),
-          backgroundColor: AppColors.success,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
+      PhonkToast.show(
+        context,
+        message: 'Logged in successfully.',
+        type: ToastType.success,
       );
     } catch (e) {
       _setError(_friendlyGrpcError(e));

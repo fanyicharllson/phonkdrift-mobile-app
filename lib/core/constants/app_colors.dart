@@ -17,7 +17,7 @@ class AppColors {
   // === TEXT ===
   static const Color textPrimary = Color(0xFFF0F0F5);
   static const Color textSecondary = Color(0xFF8888AA);
-  static const Color textMuted = Color(0xFF44445A);
+  static const Color textMuted = Color(0xFF6B6B80);
   static const Color textRed = Color(0xFFFF0055);
 
   // === BORDERS ===

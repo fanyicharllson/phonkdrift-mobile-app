@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'core/constants/app_theme.dart';
 import 'core/network/grpc_client.dart';
-import 'features/auth/presentation/screens/splash_screen.dart';
+import 'features/auth/presentation/screens/router_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,7 +36,7 @@ class PhonkDriftApp extends StatelessWidget {
       title: 'PhonkDrift',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
-      home: const SplashScreen(),
+      home: const RouterScreen(),
     );
   }
 }

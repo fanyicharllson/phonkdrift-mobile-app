@@ -8,6 +8,7 @@ import '../../../../core/network/grpc_client.dart';
 import '../../../../core/utils/error_helper.dart';
 import '../../../../core/widgets/phonk_button.dart';
 import '../../../../core/widgets/phonk_error_banner.dart';
+import '../../../../core/widgets/phonk_toast.dart';
 import 'login_screen.dart';
 
 enum _ForgotStep { email, code, newPassword }
@@ -45,7 +46,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   void _setError(String msg) {
     if (!mounted) return;
-    setState(() { _errorMessage = msg; _isLoading = false; });
+    setState(() {
+      _errorMessage = msg;
+      _isLoading = false;
+    });
   }
 
   void _clearError() {
@@ -55,15 +59,21 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Future<void> _sendCode() async {
     if (!_formKey.currentState!.validate()) return;
     FocusScope.of(context).unfocus();
-    setState(() { _isLoading = true; _errorMessage = ''; });
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
 
     try {
       await PhonkGrpcClient.instance.auth.forgotPassword(
         ForgotPasswordRequest(email: _emailCtrl.text.trim()),
       );
-      if (!mounted) return;
+      if (!context.mounted) return;
       _submittedEmail = _emailCtrl.text.trim();
-      setState(() { _isLoading = false; _step = _ForgotStep.code; });
+      setState(() {
+        _isLoading = false;
+        _step = _ForgotStep.code;
+      });
     } catch (e) {
       _setError(ErrorHelper.fromException(e, ctx: ErrorContext.resetPassword));
     }
@@ -71,7 +81,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   Future<void> _verifyCode(String code) async {
     if (code.length < 6) return;
-    setState(() { _isLoading = true; _errorMessage = ''; });
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
     HapticFeedback.lightImpact();
 
     try {
@@ -82,7 +95,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
       if (res.success) {
         HapticFeedback.mediumImpact();
-        setState(() { _isLoading = false; _step = _ForgotStep.newPassword; });
+        setState(() {
+          _isLoading = false;
+          _step = _ForgotStep.newPassword;
+        });
       } else {
         _pinCtrl.clear();
         _setError('Incorrect code. Check your email and try again.');
@@ -96,7 +112,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Future<void> _resetPassword() async {
     if (!_formKey.currentState!.validate()) return;
     FocusScope.of(context).unfocus();
-    setState(() { _isLoading = true; _errorMessage = ''; });
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
 
     try {
       final res = await PhonkGrpcClient.instance.auth.resetPassword(
@@ -111,28 +130,25 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
       if (res.success) {
         HapticFeedback.heavyImpact();
-        final messenger = ScaffoldMessenger.of(context);
-        Navigator.of(context).pushAndRemoveUntil(
+        if (!mounted) return;
+        final navigator = Navigator.of(context);
+        // Show toast before navigating
+        PhonkToast.show(
+          context,
+          message: 'Password updated. Sign in with your new password.',
+          type: ToastType.success,
+        );
+        await Future.delayed(const Duration(milliseconds: 800));
+        navigator.pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const LoginScreen()),
           (_) => false,
         );
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(
-              'Password updated. Sign in with your new password.',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w500),
-            ),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12)),
-            duration: const Duration(seconds: 4),
-          ),
-        );
       } else {
-        _setError(res.message.isNotEmpty
-            ? res.message
-            : 'Could not reset password. Try again.');
+        _setError(
+          res.message.isNotEmpty
+              ? res.message
+              : 'Could not reset password. Try again.',
+        );
       }
     } catch (e) {
       _setError(ErrorHelper.fromException(e, ctx: ErrorContext.resetPassword));
@@ -140,25 +156,25 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   String get _stepLabel => switch (_step) {
-        _ForgotStep.email => '1 of 3',
-        _ForgotStep.code => '2 of 3',
-        _ForgotStep.newPassword => '3 of 3',
-      };
+    _ForgotStep.email => '1 of 3',
+    _ForgotStep.code => '2 of 3',
+    _ForgotStep.newPassword => '3 of 3',
+  };
 
   PinTheme get _pinTheme => PinTheme(
-        width: 52,
-        height: 58,
-        textStyle: GoogleFonts.inter(
-          fontSize: 22,
-          fontWeight: FontWeight.w800,
-          color: AppColors.textPrimary,
-        ),
-        decoration: BoxDecoration(
-          color: AppColors.bgSurface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.borderSubtle, width: 1.5),
-        ),
-      );
+    width: 52,
+    height: 58,
+    textStyle: GoogleFonts.inter(
+      fontSize: 22,
+      fontWeight: FontWeight.w800,
+      color: AppColors.textPrimary,
+    ),
+    decoration: BoxDecoration(
+      color: AppColors.bgSurface,
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: AppColors.borderSubtle, width: 1.5),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -169,9 +185,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         leading: IconButton(
           onPressed: () {
             if (_step == _ForgotStep.code) {
-              setState(() { _step = _ForgotStep.email; _clearError(); });
+              setState(() {
+                _step = _ForgotStep.email;
+                _clearError();
+              });
             } else if (_step == _ForgotStep.newPassword) {
-              setState(() { _step = _ForgotStep.code; _clearError(); });
+              setState(() {
+                _step = _ForgotStep.code;
+                _clearError();
+              });
             } else {
               Navigator.of(context).pop();
             }
@@ -232,17 +254,24 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 16),
-          Text('Forgot your\npassword?',
-              style: GoogleFonts.inter(
-                fontSize: 36, fontWeight: FontWeight.w900,
-                color: AppColors.textPrimary,
-                letterSpacing: -1.3, height: 1.08,
-              )),
+          Text(
+            'Forgot your\npassword?',
+            style: GoogleFonts.inter(
+              fontSize: 36,
+              fontWeight: FontWeight.w900,
+              color: AppColors.textPrimary,
+              letterSpacing: -1.3,
+              height: 1.08,
+            ),
+          ),
           const SizedBox(height: 12),
           Text(
             "No worries. Enter your registered email and we'll send you a 6-digit reset code.",
             style: GoogleFonts.inter(
-                fontSize: 15, color: AppColors.textSecondary, height: 1.55),
+              fontSize: 15,
+              color: AppColors.textSecondary,
+              height: 1.55,
+            ),
           ),
           const SizedBox(height: 40),
           _label('Email address'),
@@ -255,7 +284,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             onChanged: (_) => _clearError(),
             onFieldSubmitted: (_) => _sendCode(),
             style: GoogleFonts.inter(
-                color: AppColors.textPrimary, fontSize: 15),
+              color: AppColors.textPrimary,
+              fontSize: 15,
+            ),
             decoration: const InputDecoration(
               hintText: 'you@example.com',
               prefixIcon: Icon(Icons.mail_outline_rounded, size: 20),
@@ -270,8 +301,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           ),
           const SizedBox(height: 24),
           PhonkErrorBanner(
-              message: _errorMessage,
-              onDismiss: () => setState(() => _errorMessage = '')),
+            message: _errorMessage,
+            onDismiss: () => setState(() => _errorMessage = ''),
+          ),
           if (_errorMessage.isNotEmpty) const SizedBox(height: 16),
           PhonkButton(
             label: 'Send Reset Code',
@@ -291,23 +323,32 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16),
-        Text('Enter reset\ncode.',
-            style: GoogleFonts.inter(
-              fontSize: 36, fontWeight: FontWeight.w900,
-              color: AppColors.textPrimary,
-              letterSpacing: -1.3, height: 1.08,
-            )),
+        Text(
+          'Enter reset\ncode.',
+          style: GoogleFonts.inter(
+            fontSize: 36,
+            fontWeight: FontWeight.w900,
+            color: AppColors.textPrimary,
+            letterSpacing: -1.3,
+            height: 1.08,
+          ),
+        ),
         const SizedBox(height: 12),
         RichText(
           text: TextSpan(
             style: GoogleFonts.inter(
-                fontSize: 15, color: AppColors.textSecondary, height: 1.55),
+              fontSize: 15,
+              color: AppColors.textSecondary,
+              height: 1.55,
+            ),
             children: [
               const TextSpan(text: 'We sent a 6-digit code to '),
               TextSpan(
                 text: _submittedEmail,
                 style: const TextStyle(
-                    color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const TextSpan(text: '. It expires in 15 minutes.'),
             ],
@@ -348,8 +389,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         ),
         const SizedBox(height: 32),
         PhonkErrorBanner(
-            message: _errorMessage,
-            onDismiss: () => setState(() => _errorMessage = '')),
+          message: _errorMessage,
+          onDismiss: () => setState(() => _errorMessage = ''),
+        ),
         if (_errorMessage.isNotEmpty) const SizedBox(height: 16),
         PhonkButton(
           label: 'Verify Code',
@@ -370,17 +412,24 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 16),
-          Text('New\npassword.',
-              style: GoogleFonts.inter(
-                fontSize: 36, fontWeight: FontWeight.w900,
-                color: AppColors.textPrimary,
-                letterSpacing: -1.3, height: 1.08,
-              )),
+          Text(
+            'New\npassword.',
+            style: GoogleFonts.inter(
+              fontSize: 36,
+              fontWeight: FontWeight.w900,
+              color: AppColors.textPrimary,
+              letterSpacing: -1.3,
+              height: 1.08,
+            ),
+          ),
           const SizedBox(height: 12),
           Text(
             'Create a strong new password. Minimum 6 characters.',
             style: GoogleFonts.inter(
-                fontSize: 15, color: AppColors.textSecondary, height: 1.55),
+              fontSize: 15,
+              color: AppColors.textSecondary,
+              height: 1.55,
+            ),
           ),
           const SizedBox(height: 40),
           _label('New password'),
@@ -391,7 +440,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             textInputAction: TextInputAction.next,
             onChanged: (_) => _clearError(),
             style: GoogleFonts.inter(
-                color: AppColors.textPrimary, fontSize: 15),
+              color: AppColors.textPrimary,
+              fontSize: 15,
+            ),
             decoration: InputDecoration(
               hintText: 'Min. 6 characters',
               prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
@@ -421,7 +472,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             onChanged: (_) => _clearError(),
             onFieldSubmitted: (_) => _resetPassword(),
             style: GoogleFonts.inter(
-                color: AppColors.textPrimary, fontSize: 15),
+              color: AppColors.textPrimary,
+              fontSize: 15,
+            ),
             decoration: InputDecoration(
               hintText: 'Repeat new password',
               prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
@@ -444,8 +497,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           ),
           const SizedBox(height: 24),
           PhonkErrorBanner(
-              message: _errorMessage,
-              onDismiss: () => setState(() => _errorMessage = '')),
+            message: _errorMessage,
+            onDismiss: () => setState(() => _errorMessage = ''),
+          ),
           if (_errorMessage.isNotEmpty) const SizedBox(height: 16),
           PhonkButton(
             label: 'Reset Password',
@@ -460,11 +514,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   Widget _label(String text) => Text(
-        text,
-        style: GoogleFonts.inter(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textSecondary,
-        ),
-      );
+    text,
+    style: GoogleFonts.inter(
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+      color: AppColors.textSecondary,
+    ),
+  );
 }
