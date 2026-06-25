@@ -6,6 +6,7 @@ import '../../../../core/widgets/phonk_error_banner.dart';
 import '../../../../core/utils/storage_helper.dart';
 import '../../../../core/network/grpc_client.dart';
 import '../../../../core/network/generated/auth.pb.dart';
+import '../../../../core/widgets/phonk_toast.dart';
 import 'login_screen.dart';
 import 'verify_screen.dart';
 
@@ -352,12 +353,63 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     variant: PhonkButtonVariant.outline,
                   ),
 
+                  const SizedBox(height: 18),
+                  const _TermsText(),
                   const SizedBox(height: 40),
                 ],
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _TermsText extends StatelessWidget {
+  const _TermsText();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Text(
+            'By creating an account with PhonkDrift, you agree to PhonkDrift',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              color: AppColors.textMuted,
+              height: 1.4,
+            ),
+          ),
+          GestureDetector(
+            onTap: () => PhonkToast.show(
+              context,
+              message: 'Terms and Conditions page coming soon.',
+              type: ToastType.info,
+            ),
+            child: Text(
+              'Terms and Conditions',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w700,
+                height: 1.4,
+              ),
+            ),
+          ),
+          Text(
+            '.',
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              color: AppColors.textMuted,
+              height: 1.4,
+            ),
+          ),
+        ],
       ),
     );
   }

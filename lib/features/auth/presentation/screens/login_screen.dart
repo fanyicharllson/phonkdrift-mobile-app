@@ -295,12 +295,63 @@ class _LoginScreenState extends State<LoginScreen> {
                     variant: PhonkButtonVariant.outline,
                   ),
 
+                  const SizedBox(height: 18),
+                  const _TermsText(),
                   const SizedBox(height: 40),
                 ],
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _TermsText extends StatelessWidget {
+  const _TermsText();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Text(
+            'By continuing with PhonkDrift, you agree to PhonkDrift',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              color: AppColors.textMuted,
+              height: 1.4,
+            ),
+          ),
+          GestureDetector(
+            onTap: () => PhonkToast.show(
+              context,
+              message: 'Terms and Conditions page coming soon.',
+              type: ToastType.info,
+            ),
+            child: Text(
+              'Terms and Conditions',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w700,
+                height: 1.4,
+              ),
+            ),
+          ),
+          Text(
+            '.',
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              color: AppColors.textMuted,
+              height: 1.4,
+            ),
+          ),
+        ],
       ),
     );
   }
