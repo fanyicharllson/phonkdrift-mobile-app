@@ -8,7 +8,7 @@ import '../../../../core/utils/error_helper.dart';
 import '../../../../core/utils/storage_helper.dart';
 import '../../../../core/widgets/phonk_button.dart';
 import '../../../../core/widgets/phonk_error_banner.dart';
-import 'home_screen.dart';
+import '../../../track/presentation/screens/home_screen.dart';
 
 class _Level {
   final String id;

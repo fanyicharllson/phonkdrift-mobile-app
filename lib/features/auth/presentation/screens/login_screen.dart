@@ -8,7 +8,7 @@ import '../../../../core/utils/storage_helper.dart';
 import '../../../../core/network/grpc_client.dart';
 import '../../../../core/network/generated/auth.pb.dart';
 import 'register_screen.dart';
-import 'home_screen.dart';
+import '../../../track/presentation/screens/home_screen.dart';
 import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {

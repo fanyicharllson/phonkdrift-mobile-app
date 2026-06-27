@@ -45,6 +45,10 @@ dependencies:
   cached_network_image: ^3.4.1
   flutter_svg: ^2.3.0
   fixnum: ^1.1.1
+  just_audio: ^0.10.5
+  audio_session: ^0.2.3
+  url_launcher: ^6.3.2
+  share_plus: ^10.1.4
 
 dev_dependencies:
   flutter_test:

@@ -4,7 +4,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/utils/storage_helper.dart';
 import 'onboarding_screen.dart';
 import 'login_screen.dart';
-import 'home_screen.dart';
+import '../../../track/presentation/screens/home_screen.dart';
 
 class RouterScreen extends StatefulWidget {
   const RouterScreen({super.key});
