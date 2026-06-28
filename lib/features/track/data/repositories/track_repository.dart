@@ -17,63 +17,86 @@ class TrackRepository {
   final _client = PhonkGrpcClient.instance;
   final _storage = StorageHelper.instance;
 
-  Future<CallOptions> get _authOptions async {
+  // ── Auth options helper — token attached to every track call ───────────────
+  Future<CallOptions> _authOptions() async {
     final token = await _storage.getToken() ?? '';
     return _client.authCallOptions(token);
   }
 
-  /// Workaround: search "phonk" to populate For You section
-  Future<List<TrackMetadata>> getForYouTracks({int page = 1}) async {
+  // ── Get For You / Trending tracks ─────────────────────────────────────────
+  Future<List<TrackMetadata>> getForYouTracks({int limit = 20}) async {
     try {
-      final res = await _client.track.searchTrack(
-        SearchRequest(query: 'phonk', page: page),
+      final options = await _authOptions();
+      final res = await _client.track.getTrendingTracks(
+        TrendingRequest(limit: limit),
+        options: options,
       );
       return res.tracks;
     } on GrpcError catch (e) {
-      throw TrackException(_grpcMsg(e));
+      throw TrackException(_grpcMessage(e));
+    } catch (e) {
+      throw TrackException('Could not load tracks. Try again.');
     }
   }
 
-  Future<List<TrackMetadata>> searchTracks(String query, {int page = 1}) async {
+  // ── Search tracks ──────────────────────────────────────────────────────────
+  Future<List<TrackMetadata>> searchTracks({
+    required String query,
+    int page = 1,
+  }) async {
     try {
+      final options = await _authOptions();
       final res = await _client.track.searchTrack(
         SearchRequest(query: query, page: page),
+        options: options,
       );
       return res.tracks;
     } on GrpcError catch (e) {
-      throw TrackException(_grpcMsg(e));
+      throw TrackException(_grpcMessage(e));
+    } catch (e) {
+      throw TrackException('Search failed. Try again.');
     }
   }
 
-  Future<List<TrackMetadata>> getRecentlyPlayed({int limit = 10}) async {
+  // ── Get stream URL ─────────────────────────────────────────────────────────
+  Future<StreamResponse> getStreamUrl(TrackMetadata track) async {
     try {
-      final userId = await _storage.getUserId() ?? '';
-      if (userId.isEmpty) return [];
-      final opts = await _authOptions;
-      final res = await _client.track.getRecentlyPlayed(
-        RecentlyPlayedRequest(userId: userId, limit: limit),
-        options: opts,
-      );
-      return res.tracks;
-    } on GrpcError catch (e) {
-      throw TrackException(_grpcMsg(e));
-    }
-  }
-
-  Future<String> getStreamUrl(TrackMetadata track) async {
-    try {
+      final options = await _authOptions();
       final res = await _client.track.getStreamURL(
         StreamRequest(
           trackId: track.trackId,
           originalYoutubeId: track.originalYoutubeId,
         ),
+        options: options,
       );
-      return res.streamUrl;
+      return res;
     } on GrpcError catch (e) {
-      throw TrackException(_grpcMsg(e));
+      throw TrackException(_grpcMessage(e));
+    } catch (e) {
+      throw TrackException('Could not get stream. Try again.');
     }
   }
 
+  // ── Recently played ────────────────────────────────────────────────────────
+  Future<List<TrackMetadata>> getRecentlyPlayed({int limit = 20}) async {
+    try {
+      final userId = await _storage.getUserId() ?? '';
+      if (userId.isEmpty) return [];
+
+      final options = await _authOptions();
+      final res = await _client.track.getRecentlyPlayed(
+        RecentlyPlayedRequest(userId: userId, limit: limit),
+        options: options,
+      );
+      return res.tracks;
+    } on GrpcError catch (e) {
+      throw TrackException(_grpcMessage(e));
+    } catch (e) {
+      throw TrackException('Could not load history.');
+    }
+  }
+
+  // ── Sync playback telemetry ────────────────────────────────────────────────
   Future<void> syncTelemetry({
     required String trackId,
     required int positionSeconds,
@@ -82,7 +105,8 @@ class TrackRepository {
     try {
       final userId = await _storage.getUserId() ?? '';
       if (userId.isEmpty) return;
-      final opts = await _authOptions;
+
+      final options = await _authOptions();
       await _client.track.syncPlaybackTelemetry(
         PlaybackTelemetryRequest(
           userId: userId,
@@ -90,13 +114,75 @@ class TrackRepository {
           lastPositionSeconds: positionSeconds,
           isCompleted: isCompleted,
         ),
-        options: opts,
+        options: options,
       );
     } catch (_) {
-      // Telemetry is fire-and-forget — never crash for this
+      // Telemetry failures are silent — never block playback
     }
   }
 
-  String _grpcMsg(GrpcError e) =>
+  // ── Like / dislike track ───────────────────────────────────────────────────
+  Future<bool> setTrackInteraction({
+    required String trackId,
+    required bool isLiked,
+  }) async {
+    try {
+      final userId = await _storage.getUserId() ?? '';
+      if (userId.isEmpty) return false;
+
+      final options = await _authOptions();
+      final res = await _client.track.setTrackInteraction(
+        InteractionRequest(
+          userId: userId,
+          trackId: trackId,
+          isLiked: isLiked,
+        ),
+        options: options,
+      );
+      return res.success;
+    } on GrpcError catch (e) {
+      throw TrackException(_grpcMessage(e));
+    }
+  }
+
+  // ── Create playlist ────────────────────────────────────────────────────────
+  Future<PlaylistResponse> createPlaylist({
+    required String name,
+    String coverImageUrl = '',
+  }) async {
+    try {
+      final userId = await _storage.getUserId() ?? '';
+      final options = await _authOptions();
+      return await _client.track.createPlaylist(
+        CreatePlaylistRequest(
+          userId: userId,
+          name: name,
+          coverImageUrl: coverImageUrl,
+        ),
+        options: options,
+      );
+    } on GrpcError catch (e) {
+      throw TrackException(_grpcMessage(e));
+    }
+  }
+
+  // ── Add to playlist ────────────────────────────────────────────────────────
+  Future<bool> addToPlaylist({
+    required String playlistId,
+    required String trackId,
+  }) async {
+    try {
+      final options = await _authOptions();
+      final res = await _client.track.addToPlaylist(
+        PlaylistTrackRequest(playlistId: playlistId, trackId: trackId),
+        options: options,
+      );
+      return res.success;
+    } on GrpcError catch (e) {
+      throw TrackException(_grpcMessage(e));
+    }
+  }
+
+  String _grpcMessage(GrpcError e) =>
       e.message?.isNotEmpty == true ? e.message! : 'Something went wrong';
 }

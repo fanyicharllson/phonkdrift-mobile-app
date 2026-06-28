@@ -156,7 +156,8 @@ class TrackController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final streamUrl = await _repo.getStreamUrl(track);
+      final streamRes = await _repo.getStreamUrl(track);
+      final streamUrl = streamRes.streamUrl;  
       _isLoadingStream = false;
       notifyListeners();
 
@@ -245,6 +246,7 @@ class TrackController extends ChangeNotifier {
       _forYouState = TrackLoadState.loaded;
     } catch (e) {
       _forYouError = e.toString();
+      debugPrint('FOR_YOU_ERROR: $_forYouError'); // ← add this
       _forYouState = TrackLoadState.error;
     }
     notifyListeners();

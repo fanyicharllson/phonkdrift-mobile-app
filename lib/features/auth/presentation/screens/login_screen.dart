@@ -4,12 +4,10 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/phonk_button.dart';
 import '../../../../core/widgets/phonk_error_banner.dart';
 import '../../../../core/widgets/phonk_toast.dart';
-import '../../../../core/utils/storage_helper.dart';
-import '../../../../core/network/grpc_client.dart';
-import '../../../../core/network/generated/auth.pb.dart';
 import 'register_screen.dart';
 import '../../../track/presentation/screens/home_screen.dart';
 import 'forgot_password_screen.dart';
+import '../../../auth/data/repositories/auth_repository.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -76,20 +74,10 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final res = await PhonkGrpcClient.instance.auth.loginUser(
-        LoginRequest(
-          email: _emailCtrl.text.trim(),
-          password: _passCtrl.text,
-        ),
+      await AuthRepository.instance.login(
+        email: _emailCtrl.text.trim(),
+        password: _passCtrl.text,
       );
-
-      await StorageHelper.instance.saveSession(
-        token: res.token,
-        userId: res.userId,
-        username: '',
-        expiresAt: res.expiresAt.toInt(),
-      );
-
       if (!mounted) return;
       setState(() => _isLoading = false);
 
@@ -202,8 +190,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     decoration: InputDecoration(
                       hintText: 'Enter your password',
-                      prefixIcon:
-                          const Icon(Icons.lock_outline_rounded, size: 20),
+                      prefixIcon: const Icon(
+                        Icons.lock_outline_rounded,
+                        size: 20,
+                      ),
                       suffixIcon: IconButton(
                         onPressed: () =>
                             setState(() => _obscurePass = !_obscurePass),
@@ -230,12 +220,16 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: TextButton(
                       onPressed: () {
                         Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
-                      );
+                          MaterialPageRoute(
+                            builder: (_) => const ForgotPasswordScreen(),
+                          ),
+                        );
                       },
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 4, vertical: 8),
+                          horizontal: 4,
+                          vertical: 8,
+                        ),
                       ),
                       child: Text(
                         'Forgot password?',
@@ -269,7 +263,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   // ── Divider ─────────────────────────────────────────────
                   Row(
                     children: [
-                      const Expanded(child: Divider(color: AppColors.borderSubtle)),
+                      const Expanded(
+                        child: Divider(color: AppColors.borderSubtle),
+                      ),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 14),
                         child: Text(
@@ -280,7 +276,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ),
-                      const Expanded(child: Divider(color: AppColors.borderSubtle)),
+                      const Expanded(
+                        child: Divider(color: AppColors.borderSubtle),
+                      ),
                     ],
                   ),
 

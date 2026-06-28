@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:grpc/grpc.dart';
 import '../../../../core/network/grpc_client.dart';
 import '../../../../core/network/generated/auth.pb.dart';
@@ -43,12 +44,32 @@ class AuthRepository {
       final res = await _client.auth.loginUser(
         LoginRequest(email: email, password: password),
       );
+
+      // Save session first with empty username
       await _storage.saveSession(
         token: res.token,
         userId: res.userId,
         username: '',
         expiresAt: res.expiresAt.toInt(),
       );
+
+      try {
+        final userRes = await _client.auth.getUser(
+          GetUserRequest(userId: res.userId),
+          options: CallOptions(
+            metadata: {'authorization': 'Bearer ${res.token}'},
+            timeout: const Duration(seconds: 40), 
+          ),
+        );
+        
+        await _storage.saveUsername(userRes.user.username);
+        if (userRes.user.phonkLevel.isNotEmpty) {
+          await _storage.savePhonkLevel(userRes.user.phonkLevel);
+        }
+      } catch (e) {
+        debugPrint('GET_USER_ERROR: $e'); 
+      }
+
       return res;
     } on GrpcError catch (e) {
       throw AuthException(_grpcMessage(e));
@@ -71,6 +92,18 @@ class AuthRepository {
           username: '',
           expiresAt: res.expiresAt.toInt(),
         );
+
+        // Fetch username after verify too
+        try {
+          final userRes = await _client.auth.getUser(
+            GetUserRequest(userId: res.userId),
+            options: _client.authCallOptions(res.token),
+          );
+          await _storage.saveUsername(userRes.user.username);
+          if (userRes.user.phonkLevel.isNotEmpty) {
+            await _storage.savePhonkLevel(userRes.user.phonkLevel);
+          }
+        } catch (_) {}
       }
       return res;
     } on GrpcError catch (e) {
@@ -149,7 +182,11 @@ class AuthRepository {
   }) async {
     try {
       return await _client.auth.resetPassword(
-        ResetPasswordRequest(email: email, code: code, newPassword: newPassword),
+        ResetPasswordRequest(
+          email: email,
+          code: code,
+          newPassword: newPassword,
+        ),
       );
     } on GrpcError catch (e) {
       throw AuthException(_grpcMessage(e));
