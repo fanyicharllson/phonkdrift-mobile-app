@@ -117,7 +117,7 @@ class BannedScreen extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'If you believe this is a mistake, contact us at support@phonkdrift.com',
+                        'If you believe this is a mistake, contact us fanyicharllson@gmail.com',
                         style: GoogleFonts.inter(
                           fontSize: 13,
                           color: AppColors.textSecondary,

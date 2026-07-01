@@ -394,11 +394,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-
-          // Search
-          // _NavIconBtn(icon: Icons.search_rounded, onTap: () => _selectTab(1)),
-          // const SizedBox(width: 8),
-
+         
           // Profile avatar + 3-dot menu
           Row(
             children: [
@@ -767,7 +763,9 @@ class _HomeScreenState extends State<HomeScreen> {
               _controller.playTrack(_controller.recentTracks[i], context),
           onOptionsTap: () => _openTrackOptions(_controller.recentTracks[i]),
         ),
-        childCount: _controller.recentTracks.length,
+        childCount: _controller.recentTracks.length > 5
+            ? 5
+            : _controller.recentTracks.length,
       ),
     );
   }
@@ -1608,28 +1606,6 @@ class _TrackPlaceholder extends StatelessWidget {
   }
 }
 
-// class _NavIconBtn extends StatelessWidget {
-//   const _NavIconBtn({required this.icon, required this.onTap});
-//   final IconData icon;
-//   final VoidCallback onTap;
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return GestureDetector(
-//       onTap: onTap,
-//       child: Container(
-//         width: 38,
-//         height: 38,
-//         decoration: BoxDecoration(
-//           color: AppColors.bgSurface,
-//           shape: BoxShape.circle,
-//           border: Border.all(color: AppColors.borderSubtle),
-//         ),
-//         child: Icon(icon, color: AppColors.textSecondary, size: 20),
-//       ),
-//     );
-//   }
-// }
 
 class _TrackMoreButton extends StatelessWidget {
   const _TrackMoreButton({required this.onTap});
