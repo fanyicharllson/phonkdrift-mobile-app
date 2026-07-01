@@ -17,6 +17,43 @@ import 'package:protobuf/protobuf.dart' as $pb;
 
 export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
 
+class Empty extends $pb.GeneratedMessage {
+  factory Empty() => create();
+
+  Empty._();
+
+  factory Empty.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory Empty.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'Empty',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'track'),
+      createEmptyInstance: create)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  Empty clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  Empty copyWith(void Function(Empty) updates) =>
+      super.copyWith((message) => updates(message as Empty)) as Empty;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static Empty create() => Empty._();
+  @$core.override
+  Empty createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static Empty getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Empty>(create);
+  static Empty? _defaultInstance;
+}
+
 class TrackMetadata extends $pb.GeneratedMessage {
   factory TrackMetadata({
     $core.String? trackId,
@@ -28,6 +65,11 @@ class TrackMetadata extends $pb.GeneratedMessage {
     $core.String? originalYoutubeId,
     $core.int? playCount,
     $core.int? likesCount,
+    $core.String? storageUrl,
+    $core.String? genre,
+    $core.bool? isFeatured,
+    $core.bool? isApproved,
+    $core.String? source,
   }) {
     final result = create();
     if (trackId != null) result.trackId = trackId;
@@ -39,6 +81,11 @@ class TrackMetadata extends $pb.GeneratedMessage {
     if (originalYoutubeId != null) result.originalYoutubeId = originalYoutubeId;
     if (playCount != null) result.playCount = playCount;
     if (likesCount != null) result.likesCount = likesCount;
+    if (storageUrl != null) result.storageUrl = storageUrl;
+    if (genre != null) result.genre = genre;
+    if (isFeatured != null) result.isFeatured = isFeatured;
+    if (isApproved != null) result.isApproved = isApproved;
+    if (source != null) result.source = source;
     return result;
   }
 
@@ -64,6 +111,11 @@ class TrackMetadata extends $pb.GeneratedMessage {
     ..aOS(7, _omitFieldNames ? '' : 'originalYoutubeId')
     ..aI(8, _omitFieldNames ? '' : 'playCount')
     ..aI(9, _omitFieldNames ? '' : 'likesCount')
+    ..aOS(10, _omitFieldNames ? '' : 'storageUrl')
+    ..aOS(11, _omitFieldNames ? '' : 'genre')
+    ..aOB(12, _omitFieldNames ? '' : 'isFeatured')
+    ..aOB(13, _omitFieldNames ? '' : 'isApproved')
+    ..aOS(14, _omitFieldNames ? '' : 'source')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -165,6 +217,51 @@ class TrackMetadata extends $pb.GeneratedMessage {
   $core.bool hasLikesCount() => $_has(8);
   @$pb.TagNumber(9)
   void clearLikesCount() => $_clearField(9);
+
+  @$pb.TagNumber(10)
+  $core.String get storageUrl => $_getSZ(9);
+  @$pb.TagNumber(10)
+  set storageUrl($core.String value) => $_setString(9, value);
+  @$pb.TagNumber(10)
+  $core.bool hasStorageUrl() => $_has(9);
+  @$pb.TagNumber(10)
+  void clearStorageUrl() => $_clearField(10);
+
+  @$pb.TagNumber(11)
+  $core.String get genre => $_getSZ(10);
+  @$pb.TagNumber(11)
+  set genre($core.String value) => $_setString(10, value);
+  @$pb.TagNumber(11)
+  $core.bool hasGenre() => $_has(10);
+  @$pb.TagNumber(11)
+  void clearGenre() => $_clearField(11);
+
+  @$pb.TagNumber(12)
+  $core.bool get isFeatured => $_getBF(11);
+  @$pb.TagNumber(12)
+  set isFeatured($core.bool value) => $_setBool(11, value);
+  @$pb.TagNumber(12)
+  $core.bool hasIsFeatured() => $_has(11);
+  @$pb.TagNumber(12)
+  void clearIsFeatured() => $_clearField(12);
+
+  @$pb.TagNumber(13)
+  $core.bool get isApproved => $_getBF(12);
+  @$pb.TagNumber(13)
+  set isApproved($core.bool value) => $_setBool(12, value);
+  @$pb.TagNumber(13)
+  $core.bool hasIsApproved() => $_has(12);
+  @$pb.TagNumber(13)
+  void clearIsApproved() => $_clearField(13);
+
+  @$pb.TagNumber(14)
+  $core.String get source => $_getSZ(13);
+  @$pb.TagNumber(14)
+  set source($core.String value) => $_setString(13, value);
+  @$pb.TagNumber(14)
+  $core.bool hasSource() => $_has(13);
+  @$pb.TagNumber(14)
+  void clearSource() => $_clearField(14);
 }
 
 class SearchRequest extends $pb.GeneratedMessage {
@@ -1201,6 +1298,708 @@ class PlaylistActionResponse extends $pb.GeneratedMessage {
   $core.bool hasMessage() => $_has(1);
   @$pb.TagNumber(2)
   void clearMessage() => $_clearField(2);
+}
+
+/// — ForYou feed
+class ForYouRequest extends $pb.GeneratedMessage {
+  factory ForYouRequest({
+    $core.String? userId,
+    $core.int? limit,
+  }) {
+    final result = create();
+    if (userId != null) result.userId = userId;
+    if (limit != null) result.limit = limit;
+    return result;
+  }
+
+  ForYouRequest._();
+
+  factory ForYouRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory ForYouRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'ForYouRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'track'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'userId')
+    ..aI(2, _omitFieldNames ? '' : 'limit')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ForYouRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ForYouRequest copyWith(void Function(ForYouRequest) updates) =>
+      super.copyWith((message) => updates(message as ForYouRequest))
+          as ForYouRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ForYouRequest create() => ForYouRequest._();
+  @$core.override
+  ForYouRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static ForYouRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<ForYouRequest>(create);
+  static ForYouRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get userId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set userId($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasUserId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearUserId() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.int get limit => $_getIZ(1);
+  @$pb.TagNumber(2)
+  set limit($core.int value) => $_setSignedInt32(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasLimit() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearLimit() => $_clearField(2);
+}
+
+class ForYouResponse extends $pb.GeneratedMessage {
+  factory ForYouResponse({
+    $core.Iterable<TrackMetadata>? tracks,
+  }) {
+    final result = create();
+    if (tracks != null) result.tracks.addAll(tracks);
+    return result;
+  }
+
+  ForYouResponse._();
+
+  factory ForYouResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory ForYouResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'ForYouResponse',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'track'),
+      createEmptyInstance: create)
+    ..pPM<TrackMetadata>(1, _omitFieldNames ? '' : 'tracks',
+        subBuilder: TrackMetadata.create)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ForYouResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ForYouResponse copyWith(void Function(ForYouResponse) updates) =>
+      super.copyWith((message) => updates(message as ForYouResponse))
+          as ForYouResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ForYouResponse create() => ForYouResponse._();
+  @$core.override
+  ForYouResponse createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static ForYouResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<ForYouResponse>(create);
+  static ForYouResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $pb.PbList<TrackMetadata> get tracks => $_getList(0);
+}
+
+/// — Admin messages
+class SeedTrackRequest extends $pb.GeneratedMessage {
+  factory SeedTrackRequest({
+    $core.String? youtubeId,
+    $core.String? title,
+    $core.String? artistName,
+    $core.String? genre,
+    $core.String? thumbnailUrl,
+    $core.String? storageUrl,
+  }) {
+    final result = create();
+    if (youtubeId != null) result.youtubeId = youtubeId;
+    if (title != null) result.title = title;
+    if (artistName != null) result.artistName = artistName;
+    if (genre != null) result.genre = genre;
+    if (thumbnailUrl != null) result.thumbnailUrl = thumbnailUrl;
+    if (storageUrl != null) result.storageUrl = storageUrl;
+    return result;
+  }
+
+  SeedTrackRequest._();
+
+  factory SeedTrackRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory SeedTrackRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'SeedTrackRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'track'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'youtubeId')
+    ..aOS(2, _omitFieldNames ? '' : 'title')
+    ..aOS(3, _omitFieldNames ? '' : 'artistName')
+    ..aOS(4, _omitFieldNames ? '' : 'genre')
+    ..aOS(5, _omitFieldNames ? '' : 'thumbnailUrl')
+    ..aOS(6, _omitFieldNames ? '' : 'storageUrl')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  SeedTrackRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  SeedTrackRequest copyWith(void Function(SeedTrackRequest) updates) =>
+      super.copyWith((message) => updates(message as SeedTrackRequest))
+          as SeedTrackRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static SeedTrackRequest create() => SeedTrackRequest._();
+  @$core.override
+  SeedTrackRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static SeedTrackRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<SeedTrackRequest>(create);
+  static SeedTrackRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get youtubeId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set youtubeId($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasYoutubeId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearYoutubeId() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get title => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set title($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasTitle() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearTitle() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get artistName => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set artistName($core.String value) => $_setString(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasArtistName() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearArtistName() => $_clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.String get genre => $_getSZ(3);
+  @$pb.TagNumber(4)
+  set genre($core.String value) => $_setString(3, value);
+  @$pb.TagNumber(4)
+  $core.bool hasGenre() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearGenre() => $_clearField(4);
+
+  @$pb.TagNumber(5)
+  $core.String get thumbnailUrl => $_getSZ(4);
+  @$pb.TagNumber(5)
+  set thumbnailUrl($core.String value) => $_setString(4, value);
+  @$pb.TagNumber(5)
+  $core.bool hasThumbnailUrl() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearThumbnailUrl() => $_clearField(5);
+
+  @$pb.TagNumber(6)
+  $core.String get storageUrl => $_getSZ(5);
+  @$pb.TagNumber(6)
+  set storageUrl($core.String value) => $_setString(5, value);
+  @$pb.TagNumber(6)
+  $core.bool hasStorageUrl() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearStorageUrl() => $_clearField(6);
+}
+
+class SeedTrackResponse extends $pb.GeneratedMessage {
+  factory SeedTrackResponse({
+    $core.String? trackId,
+    $core.String? storageUrl,
+  }) {
+    final result = create();
+    if (trackId != null) result.trackId = trackId;
+    if (storageUrl != null) result.storageUrl = storageUrl;
+    return result;
+  }
+
+  SeedTrackResponse._();
+
+  factory SeedTrackResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory SeedTrackResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'SeedTrackResponse',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'track'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'trackId')
+    ..aOS(2, _omitFieldNames ? '' : 'storageUrl')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  SeedTrackResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  SeedTrackResponse copyWith(void Function(SeedTrackResponse) updates) =>
+      super.copyWith((message) => updates(message as SeedTrackResponse))
+          as SeedTrackResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static SeedTrackResponse create() => SeedTrackResponse._();
+  @$core.override
+  SeedTrackResponse createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static SeedTrackResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<SeedTrackResponse>(create);
+  static SeedTrackResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get trackId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set trackId($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasTrackId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearTrackId() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get storageUrl => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set storageUrl($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasStorageUrl() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearStorageUrl() => $_clearField(2);
+}
+
+class ListTracksAdminRequest extends $pb.GeneratedMessage {
+  factory ListTracksAdminRequest({
+    $core.int? page,
+    $core.int? limit,
+  }) {
+    final result = create();
+    if (page != null) result.page = page;
+    if (limit != null) result.limit = limit;
+    return result;
+  }
+
+  ListTracksAdminRequest._();
+
+  factory ListTracksAdminRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory ListTracksAdminRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'ListTracksAdminRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'track'),
+      createEmptyInstance: create)
+    ..aI(1, _omitFieldNames ? '' : 'page')
+    ..aI(2, _omitFieldNames ? '' : 'limit')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ListTracksAdminRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ListTracksAdminRequest copyWith(
+          void Function(ListTracksAdminRequest) updates) =>
+      super.copyWith((message) => updates(message as ListTracksAdminRequest))
+          as ListTracksAdminRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ListTracksAdminRequest create() => ListTracksAdminRequest._();
+  @$core.override
+  ListTracksAdminRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static ListTracksAdminRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<ListTracksAdminRequest>(create);
+  static ListTracksAdminRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.int get page => $_getIZ(0);
+  @$pb.TagNumber(1)
+  set page($core.int value) => $_setSignedInt32(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasPage() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearPage() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.int get limit => $_getIZ(1);
+  @$pb.TagNumber(2)
+  set limit($core.int value) => $_setSignedInt32(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasLimit() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearLimit() => $_clearField(2);
+}
+
+class ListTracksAdminResponse extends $pb.GeneratedMessage {
+  factory ListTracksAdminResponse({
+    $core.Iterable<TrackMetadata>? tracks,
+    $core.int? total,
+  }) {
+    final result = create();
+    if (tracks != null) result.tracks.addAll(tracks);
+    if (total != null) result.total = total;
+    return result;
+  }
+
+  ListTracksAdminResponse._();
+
+  factory ListTracksAdminResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory ListTracksAdminResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'ListTracksAdminResponse',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'track'),
+      createEmptyInstance: create)
+    ..pPM<TrackMetadata>(1, _omitFieldNames ? '' : 'tracks',
+        subBuilder: TrackMetadata.create)
+    ..aI(2, _omitFieldNames ? '' : 'total')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ListTracksAdminResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ListTracksAdminResponse copyWith(
+          void Function(ListTracksAdminResponse) updates) =>
+      super.copyWith((message) => updates(message as ListTracksAdminResponse))
+          as ListTracksAdminResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ListTracksAdminResponse create() => ListTracksAdminResponse._();
+  @$core.override
+  ListTracksAdminResponse createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static ListTracksAdminResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<ListTracksAdminResponse>(create);
+  static ListTracksAdminResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $pb.PbList<TrackMetadata> get tracks => $_getList(0);
+
+  @$pb.TagNumber(2)
+  $core.int get total => $_getIZ(1);
+  @$pb.TagNumber(2)
+  set total($core.int value) => $_setSignedInt32(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasTotal() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearTotal() => $_clearField(2);
+}
+
+class TrackActionRequest extends $pb.GeneratedMessage {
+  factory TrackActionRequest({
+    $core.String? trackId,
+  }) {
+    final result = create();
+    if (trackId != null) result.trackId = trackId;
+    return result;
+  }
+
+  TrackActionRequest._();
+
+  factory TrackActionRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory TrackActionRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'TrackActionRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'track'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'trackId')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  TrackActionRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  TrackActionRequest copyWith(void Function(TrackActionRequest) updates) =>
+      super.copyWith((message) => updates(message as TrackActionRequest))
+          as TrackActionRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static TrackActionRequest create() => TrackActionRequest._();
+  @$core.override
+  TrackActionRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static TrackActionRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<TrackActionRequest>(create);
+  static TrackActionRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get trackId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set trackId($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasTrackId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearTrackId() => $_clearField(1);
+}
+
+class TrackActionResponse extends $pb.GeneratedMessage {
+  factory TrackActionResponse({
+    $core.bool? success,
+    $core.String? message,
+  }) {
+    final result = create();
+    if (success != null) result.success = success;
+    if (message != null) result.message = message;
+    return result;
+  }
+
+  TrackActionResponse._();
+
+  factory TrackActionResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory TrackActionResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'TrackActionResponse',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'track'),
+      createEmptyInstance: create)
+    ..aOB(1, _omitFieldNames ? '' : 'success')
+    ..aOS(2, _omitFieldNames ? '' : 'message')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  TrackActionResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  TrackActionResponse copyWith(void Function(TrackActionResponse) updates) =>
+      super.copyWith((message) => updates(message as TrackActionResponse))
+          as TrackActionResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static TrackActionResponse create() => TrackActionResponse._();
+  @$core.override
+  TrackActionResponse createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static TrackActionResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<TrackActionResponse>(create);
+  static TrackActionResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get success => $_getBF(0);
+  @$pb.TagNumber(1)
+  set success($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSuccess() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSuccess() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get message => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set message($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasMessage() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearMessage() => $_clearField(2);
+}
+
+class FeatureTrackRequest extends $pb.GeneratedMessage {
+  factory FeatureTrackRequest({
+    $core.String? trackId,
+    $core.bool? isFeatured,
+  }) {
+    final result = create();
+    if (trackId != null) result.trackId = trackId;
+    if (isFeatured != null) result.isFeatured = isFeatured;
+    return result;
+  }
+
+  FeatureTrackRequest._();
+
+  factory FeatureTrackRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory FeatureTrackRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'FeatureTrackRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'track'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'trackId')
+    ..aOB(2, _omitFieldNames ? '' : 'isFeatured')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  FeatureTrackRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  FeatureTrackRequest copyWith(void Function(FeatureTrackRequest) updates) =>
+      super.copyWith((message) => updates(message as FeatureTrackRequest))
+          as FeatureTrackRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static FeatureTrackRequest create() => FeatureTrackRequest._();
+  @$core.override
+  FeatureTrackRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static FeatureTrackRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<FeatureTrackRequest>(create);
+  static FeatureTrackRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get trackId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set trackId($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasTrackId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearTrackId() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.bool get isFeatured => $_getBF(1);
+  @$pb.TagNumber(2)
+  set isFeatured($core.bool value) => $_setBool(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasIsFeatured() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearIsFeatured() => $_clearField(2);
+}
+
+class AdminStatsResponse extends $pb.GeneratedMessage {
+  factory AdminStatsResponse({
+    $core.int? totalTracks,
+    $core.int? totalPlays,
+    $core.int? pendingTracks,
+    $core.int? totalUsers,
+  }) {
+    final result = create();
+    if (totalTracks != null) result.totalTracks = totalTracks;
+    if (totalPlays != null) result.totalPlays = totalPlays;
+    if (pendingTracks != null) result.pendingTracks = pendingTracks;
+    if (totalUsers != null) result.totalUsers = totalUsers;
+    return result;
+  }
+
+  AdminStatsResponse._();
+
+  factory AdminStatsResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory AdminStatsResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'AdminStatsResponse',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'track'),
+      createEmptyInstance: create)
+    ..aI(1, _omitFieldNames ? '' : 'totalTracks')
+    ..aI(2, _omitFieldNames ? '' : 'totalPlays')
+    ..aI(3, _omitFieldNames ? '' : 'pendingTracks')
+    ..aI(4, _omitFieldNames ? '' : 'totalUsers')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  AdminStatsResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  AdminStatsResponse copyWith(void Function(AdminStatsResponse) updates) =>
+      super.copyWith((message) => updates(message as AdminStatsResponse))
+          as AdminStatsResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static AdminStatsResponse create() => AdminStatsResponse._();
+  @$core.override
+  AdminStatsResponse createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static AdminStatsResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<AdminStatsResponse>(create);
+  static AdminStatsResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.int get totalTracks => $_getIZ(0);
+  @$pb.TagNumber(1)
+  set totalTracks($core.int value) => $_setSignedInt32(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasTotalTracks() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearTotalTracks() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.int get totalPlays => $_getIZ(1);
+  @$pb.TagNumber(2)
+  set totalPlays($core.int value) => $_setSignedInt32(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasTotalPlays() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearTotalPlays() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.int get pendingTracks => $_getIZ(2);
+  @$pb.TagNumber(3)
+  set pendingTracks($core.int value) => $_setSignedInt32(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasPendingTracks() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearPendingTracks() => $_clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.int get totalUsers => $_getIZ(3);
+  @$pb.TagNumber(4)
+  set totalUsers($core.int value) => $_setSignedInt32(3, value);
+  @$pb.TagNumber(4)
+  $core.bool hasTotalUsers() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearTotalUsers() => $_clearField(4);
 }
 
 const $core.bool _omitFieldNames =

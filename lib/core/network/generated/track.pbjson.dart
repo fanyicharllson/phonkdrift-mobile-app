@@ -15,6 +15,15 @@ import 'dart:convert' as $convert;
 import 'dart:core' as $core;
 import 'dart:typed_data' as $typed_data;
 
+@$core.Deprecated('Use emptyDescriptor instead')
+const Empty$json = {
+  '1': 'Empty',
+};
+
+/// Descriptor for `Empty`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List emptyDescriptor =
+    $convert.base64Decode('CgVFbXB0eQ==');
+
 @$core.Deprecated('Use trackMetadataDescriptor instead')
 const TrackMetadata$json = {
   '1': 'TrackMetadata',
@@ -34,6 +43,11 @@ const TrackMetadata$json = {
     },
     {'1': 'play_count', '3': 8, '4': 1, '5': 5, '10': 'playCount'},
     {'1': 'likes_count', '3': 9, '4': 1, '5': 5, '10': 'likesCount'},
+    {'1': 'storage_url', '3': 10, '4': 1, '5': 9, '10': 'storageUrl'},
+    {'1': 'genre', '3': 11, '4': 1, '5': 9, '10': 'genre'},
+    {'1': 'is_featured', '3': 12, '4': 1, '5': 8, '10': 'isFeatured'},
+    {'1': 'is_approved', '3': 13, '4': 1, '5': 8, '10': 'isApproved'},
+    {'1': 'source', '3': 14, '4': 1, '5': 9, '10': 'source'},
   ],
 };
 
@@ -44,7 +58,10 @@ final $typed_data.Uint8List trackMetadataDescriptor = $convert.base64Decode(
     'ASgJUgphcnRpc3ROYW1lEhoKCGR1cmF0aW9uGAUgASgJUghkdXJhdGlvbhIjCg10aHVtYm5haW'
     'xfdXJsGAYgASgJUgx0aHVtYm5haWxVcmwSLgoTb3JpZ2luYWxfeW91dHViZV9pZBgHIAEoCVIR'
     'b3JpZ2luYWxZb3V0dWJlSWQSHQoKcGxheV9jb3VudBgIIAEoBVIJcGxheUNvdW50Eh8KC2xpa2'
-    'VzX2NvdW50GAkgASgFUgpsaWtlc0NvdW50');
+    'VzX2NvdW50GAkgASgFUgpsaWtlc0NvdW50Eh8KC3N0b3JhZ2VfdXJsGAogASgJUgpzdG9yYWdl'
+    'VXJsEhQKBWdlbnJlGAsgASgJUgVnZW5yZRIfCgtpc19mZWF0dXJlZBgMIAEoCFIKaXNGZWF0dX'
+    'JlZBIfCgtpc19hcHByb3ZlZBgNIAEoCFIKaXNBcHByb3ZlZBIWCgZzb3VyY2UYDiABKAlSBnNv'
+    'dXJjZQ==');
 
 @$core.Deprecated('Use searchRequestDescriptor instead')
 const SearchRequest$json = {
@@ -303,3 +320,166 @@ final $typed_data.Uint8List playlistActionResponseDescriptor =
     $convert.base64Decode(
         'ChZQbGF5bGlzdEFjdGlvblJlc3BvbnNlEhgKB3N1Y2Nlc3MYASABKAhSB3N1Y2Nlc3MSGAoHbW'
         'Vzc2FnZRgCIAEoCVIHbWVzc2FnZQ==');
+
+@$core.Deprecated('Use forYouRequestDescriptor instead')
+const ForYouRequest$json = {
+  '1': 'ForYouRequest',
+  '2': [
+    {'1': 'user_id', '3': 1, '4': 1, '5': 9, '10': 'userId'},
+    {'1': 'limit', '3': 2, '4': 1, '5': 5, '10': 'limit'},
+  ],
+};
+
+/// Descriptor for `ForYouRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List forYouRequestDescriptor = $convert.base64Decode(
+    'Cg1Gb3JZb3VSZXF1ZXN0EhcKB3VzZXJfaWQYASABKAlSBnVzZXJJZBIUCgVsaW1pdBgCIAEoBV'
+    'IFbGltaXQ=');
+
+@$core.Deprecated('Use forYouResponseDescriptor instead')
+const ForYouResponse$json = {
+  '1': 'ForYouResponse',
+  '2': [
+    {
+      '1': 'tracks',
+      '3': 1,
+      '4': 3,
+      '5': 11,
+      '6': '.track.TrackMetadata',
+      '10': 'tracks'
+    },
+  ],
+};
+
+/// Descriptor for `ForYouResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List forYouResponseDescriptor = $convert.base64Decode(
+    'Cg5Gb3JZb3VSZXNwb25zZRIsCgZ0cmFja3MYASADKAsyFC50cmFjay5UcmFja01ldGFkYXRhUg'
+    'Z0cmFja3M=');
+
+@$core.Deprecated('Use seedTrackRequestDescriptor instead')
+const SeedTrackRequest$json = {
+  '1': 'SeedTrackRequest',
+  '2': [
+    {'1': 'youtube_id', '3': 1, '4': 1, '5': 9, '10': 'youtubeId'},
+    {'1': 'title', '3': 2, '4': 1, '5': 9, '10': 'title'},
+    {'1': 'artist_name', '3': 3, '4': 1, '5': 9, '10': 'artistName'},
+    {'1': 'genre', '3': 4, '4': 1, '5': 9, '10': 'genre'},
+    {'1': 'thumbnail_url', '3': 5, '4': 1, '5': 9, '10': 'thumbnailUrl'},
+    {'1': 'storage_url', '3': 6, '4': 1, '5': 9, '10': 'storageUrl'},
+  ],
+};
+
+/// Descriptor for `SeedTrackRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List seedTrackRequestDescriptor = $convert.base64Decode(
+    'ChBTZWVkVHJhY2tSZXF1ZXN0Eh0KCnlvdXR1YmVfaWQYASABKAlSCXlvdXR1YmVJZBIUCgV0aX'
+    'RsZRgCIAEoCVIFdGl0bGUSHwoLYXJ0aXN0X25hbWUYAyABKAlSCmFydGlzdE5hbWUSFAoFZ2Vu'
+    'cmUYBCABKAlSBWdlbnJlEiMKDXRodW1ibmFpbF91cmwYBSABKAlSDHRodW1ibmFpbFVybBIfCg'
+    'tzdG9yYWdlX3VybBgGIAEoCVIKc3RvcmFnZVVybA==');
+
+@$core.Deprecated('Use seedTrackResponseDescriptor instead')
+const SeedTrackResponse$json = {
+  '1': 'SeedTrackResponse',
+  '2': [
+    {'1': 'track_id', '3': 1, '4': 1, '5': 9, '10': 'trackId'},
+    {'1': 'storage_url', '3': 2, '4': 1, '5': 9, '10': 'storageUrl'},
+  ],
+};
+
+/// Descriptor for `SeedTrackResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List seedTrackResponseDescriptor = $convert.base64Decode(
+    'ChFTZWVkVHJhY2tSZXNwb25zZRIZCgh0cmFja19pZBgBIAEoCVIHdHJhY2tJZBIfCgtzdG9yYW'
+    'dlX3VybBgCIAEoCVIKc3RvcmFnZVVybA==');
+
+@$core.Deprecated('Use listTracksAdminRequestDescriptor instead')
+const ListTracksAdminRequest$json = {
+  '1': 'ListTracksAdminRequest',
+  '2': [
+    {'1': 'page', '3': 1, '4': 1, '5': 5, '10': 'page'},
+    {'1': 'limit', '3': 2, '4': 1, '5': 5, '10': 'limit'},
+  ],
+};
+
+/// Descriptor for `ListTracksAdminRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List listTracksAdminRequestDescriptor =
+    $convert.base64Decode(
+        'ChZMaXN0VHJhY2tzQWRtaW5SZXF1ZXN0EhIKBHBhZ2UYASABKAVSBHBhZ2USFAoFbGltaXQYAi'
+        'ABKAVSBWxpbWl0');
+
+@$core.Deprecated('Use listTracksAdminResponseDescriptor instead')
+const ListTracksAdminResponse$json = {
+  '1': 'ListTracksAdminResponse',
+  '2': [
+    {
+      '1': 'tracks',
+      '3': 1,
+      '4': 3,
+      '5': 11,
+      '6': '.track.TrackMetadata',
+      '10': 'tracks'
+    },
+    {'1': 'total', '3': 2, '4': 1, '5': 5, '10': 'total'},
+  ],
+};
+
+/// Descriptor for `ListTracksAdminResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List listTracksAdminResponseDescriptor =
+    $convert.base64Decode(
+        'ChdMaXN0VHJhY2tzQWRtaW5SZXNwb25zZRIsCgZ0cmFja3MYASADKAsyFC50cmFjay5UcmFja0'
+        '1ldGFkYXRhUgZ0cmFja3MSFAoFdG90YWwYAiABKAVSBXRvdGFs');
+
+@$core.Deprecated('Use trackActionRequestDescriptor instead')
+const TrackActionRequest$json = {
+  '1': 'TrackActionRequest',
+  '2': [
+    {'1': 'track_id', '3': 1, '4': 1, '5': 9, '10': 'trackId'},
+  ],
+};
+
+/// Descriptor for `TrackActionRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List trackActionRequestDescriptor =
+    $convert.base64Decode(
+        'ChJUcmFja0FjdGlvblJlcXVlc3QSGQoIdHJhY2tfaWQYASABKAlSB3RyYWNrSWQ=');
+
+@$core.Deprecated('Use trackActionResponseDescriptor instead')
+const TrackActionResponse$json = {
+  '1': 'TrackActionResponse',
+  '2': [
+    {'1': 'success', '3': 1, '4': 1, '5': 8, '10': 'success'},
+    {'1': 'message', '3': 2, '4': 1, '5': 9, '10': 'message'},
+  ],
+};
+
+/// Descriptor for `TrackActionResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List trackActionResponseDescriptor = $convert.base64Decode(
+    'ChNUcmFja0FjdGlvblJlc3BvbnNlEhgKB3N1Y2Nlc3MYASABKAhSB3N1Y2Nlc3MSGAoHbWVzc2'
+    'FnZRgCIAEoCVIHbWVzc2FnZQ==');
+
+@$core.Deprecated('Use featureTrackRequestDescriptor instead')
+const FeatureTrackRequest$json = {
+  '1': 'FeatureTrackRequest',
+  '2': [
+    {'1': 'track_id', '3': 1, '4': 1, '5': 9, '10': 'trackId'},
+    {'1': 'is_featured', '3': 2, '4': 1, '5': 8, '10': 'isFeatured'},
+  ],
+};
+
+/// Descriptor for `FeatureTrackRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List featureTrackRequestDescriptor = $convert.base64Decode(
+    'ChNGZWF0dXJlVHJhY2tSZXF1ZXN0EhkKCHRyYWNrX2lkGAEgASgJUgd0cmFja0lkEh8KC2lzX2'
+    'ZlYXR1cmVkGAIgASgIUgppc0ZlYXR1cmVk');
+
+@$core.Deprecated('Use adminStatsResponseDescriptor instead')
+const AdminStatsResponse$json = {
+  '1': 'AdminStatsResponse',
+  '2': [
+    {'1': 'total_tracks', '3': 1, '4': 1, '5': 5, '10': 'totalTracks'},
+    {'1': 'total_plays', '3': 2, '4': 1, '5': 5, '10': 'totalPlays'},
+    {'1': 'pending_tracks', '3': 3, '4': 1, '5': 5, '10': 'pendingTracks'},
+    {'1': 'total_users', '3': 4, '4': 1, '5': 5, '10': 'totalUsers'},
+  ],
+};
+
+/// Descriptor for `AdminStatsResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List adminStatsResponseDescriptor = $convert.base64Decode(
+    'ChJBZG1pblN0YXRzUmVzcG9uc2USIQoMdG90YWxfdHJhY2tzGAEgASgFUgt0b3RhbFRyYWNrcx'
+    'IfCgt0b3RhbF9wbGF5cxgCIAEoBVIKdG90YWxQbGF5cxIlCg5wZW5kaW5nX3RyYWNrcxgDIAEo'
+    'BVINcGVuZGluZ1RyYWNrcxIfCgt0b3RhbF91c2VycxgEIAEoBVIKdG90YWxVc2Vycw==');

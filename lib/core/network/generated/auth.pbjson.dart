@@ -222,6 +222,7 @@ const User$json = {
     {'1': 'email', '3': 3, '4': 1, '5': 9, '10': 'email'},
     {'1': 'avatar_url', '3': 4, '4': 1, '5': 9, '10': 'avatarUrl'},
     {'1': 'phonk_level', '3': 5, '4': 1, '5': 9, '10': 'phonkLevel'},
+    {'1': 'is_banned', '3': 6, '4': 1, '5': 8, '10': 'isBanned'},
   ],
 };
 
@@ -229,7 +230,8 @@ const User$json = {
 final $typed_data.Uint8List userDescriptor = $convert.base64Decode(
     'CgRVc2VyEhcKB3VzZXJfaWQYASABKAlSBnVzZXJJZBIaCgh1c2VybmFtZRgCIAEoCVIIdXNlcm'
     '5hbWUSFAoFZW1haWwYAyABKAlSBWVtYWlsEh0KCmF2YXRhcl91cmwYBCABKAlSCWF2YXRhclVy'
-    'bBIfCgtwaG9ua19sZXZlbBgFIAEoCVIKcGhvbmtMZXZlbA==');
+    'bBIfCgtwaG9ua19sZXZlbBgFIAEoCVIKcGhvbmtMZXZlbBIbCglpc19iYW5uZWQYBiABKAhSCG'
+    'lzQmFubmVk');
 
 @$core.Deprecated('Use forgotPasswordRequestDescriptor instead')
 const ForgotPasswordRequest$json = {
@@ -317,3 +319,147 @@ final $typed_data.Uint8List verifyResetCodeResponseDescriptor =
     $convert.base64Decode(
         'ChdWZXJpZnlSZXNldENvZGVSZXNwb25zZRIYCgdzdWNjZXNzGAEgASgIUgdzdWNjZXNzEh8KC3'
         'Jlc2V0X3Rva2VuGAIgASgJUgpyZXNldFRva2Vu');
+
+@$core.Deprecated('Use banUserRequestDescriptor instead')
+const BanUserRequest$json = {
+  '1': 'BanUserRequest',
+  '2': [
+    {'1': 'user_id', '3': 1, '4': 1, '5': 9, '10': 'userId'},
+    {'1': 'reason', '3': 2, '4': 1, '5': 9, '10': 'reason'},
+  ],
+};
+
+/// Descriptor for `BanUserRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List banUserRequestDescriptor = $convert.base64Decode(
+    'Cg5CYW5Vc2VyUmVxdWVzdBIXCgd1c2VyX2lkGAEgASgJUgZ1c2VySWQSFgoGcmVhc29uGAIgAS'
+    'gJUgZyZWFzb24=');
+
+@$core.Deprecated('Use banUserResponseDescriptor instead')
+const BanUserResponse$json = {
+  '1': 'BanUserResponse',
+  '2': [
+    {'1': 'success', '3': 1, '4': 1, '5': 8, '10': 'success'},
+    {'1': 'message', '3': 2, '4': 1, '5': 9, '10': 'message'},
+  ],
+};
+
+/// Descriptor for `BanUserResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List banUserResponseDescriptor = $convert.base64Decode(
+    'Cg9CYW5Vc2VyUmVzcG9uc2USGAoHc3VjY2VzcxgBIAEoCFIHc3VjY2VzcxIYCgdtZXNzYWdlGA'
+    'IgASgJUgdtZXNzYWdl');
+
+@$core.Deprecated('Use unbanUserRequestDescriptor instead')
+const UnbanUserRequest$json = {
+  '1': 'UnbanUserRequest',
+  '2': [
+    {'1': 'user_id', '3': 1, '4': 1, '5': 9, '10': 'userId'},
+  ],
+};
+
+/// Descriptor for `UnbanUserRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List unbanUserRequestDescriptor = $convert.base64Decode(
+    'ChBVbmJhblVzZXJSZXF1ZXN0EhcKB3VzZXJfaWQYASABKAlSBnVzZXJJZA==');
+
+@$core.Deprecated('Use unbanUserResponseDescriptor instead')
+const UnbanUserResponse$json = {
+  '1': 'UnbanUserResponse',
+  '2': [
+    {'1': 'success', '3': 1, '4': 1, '5': 8, '10': 'success'},
+    {'1': 'message', '3': 2, '4': 1, '5': 9, '10': 'message'},
+  ],
+};
+
+/// Descriptor for `UnbanUserResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List unbanUserResponseDescriptor = $convert.base64Decode(
+    'ChFVbmJhblVzZXJSZXNwb25zZRIYCgdzdWNjZXNzGAEgASgIUgdzdWNjZXNzEhgKB21lc3NhZ2'
+    'UYAiABKAlSB21lc3NhZ2U=');
+
+@$core.Deprecated('Use pushNotificationRequestDescriptor instead')
+const PushNotificationRequest$json = {
+  '1': 'PushNotificationRequest',
+  '2': [
+    {'1': 'title', '3': 1, '4': 1, '5': 9, '10': 'title'},
+    {'1': 'body', '3': 2, '4': 1, '5': 9, '10': 'body'},
+    {'1': 'target_user_id', '3': 3, '4': 1, '5': 9, '10': 'targetUserId'},
+    {'1': 'data_type', '3': 4, '4': 1, '5': 9, '10': 'dataType'},
+    {'1': 'data_id', '3': 5, '4': 1, '5': 9, '10': 'dataId'},
+  ],
+};
+
+/// Descriptor for `PushNotificationRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List pushNotificationRequestDescriptor = $convert.base64Decode(
+    'ChdQdXNoTm90aWZpY2F0aW9uUmVxdWVzdBIUCgV0aXRsZRgBIAEoCVIFdGl0bGUSEgoEYm9keR'
+    'gCIAEoCVIEYm9keRIkCg50YXJnZXRfdXNlcl9pZBgDIAEoCVIMdGFyZ2V0VXNlcklkEhsKCWRh'
+    'dGFfdHlwZRgEIAEoCVIIZGF0YVR5cGUSFwoHZGF0YV9pZBgFIAEoCVIGZGF0YUlk');
+
+@$core.Deprecated('Use pushNotificationResponseDescriptor instead')
+const PushNotificationResponse$json = {
+  '1': 'PushNotificationResponse',
+  '2': [
+    {'1': 'success', '3': 1, '4': 1, '5': 8, '10': 'success'},
+    {'1': 'sent_count', '3': 2, '4': 1, '5': 5, '10': 'sentCount'},
+    {'1': 'message', '3': 3, '4': 1, '5': 9, '10': 'message'},
+  ],
+};
+
+/// Descriptor for `PushNotificationResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List pushNotificationResponseDescriptor = $convert.base64Decode(
+    'ChhQdXNoTm90aWZpY2F0aW9uUmVzcG9uc2USGAoHc3VjY2VzcxgBIAEoCFIHc3VjY2VzcxIdCg'
+    'pzZW50X2NvdW50GAIgASgFUglzZW50Q291bnQSGAoHbWVzc2FnZRgDIAEoCVIHbWVzc2FnZQ==');
+
+@$core.Deprecated('Use updateFCMTokenRequestDescriptor instead')
+const UpdateFCMTokenRequest$json = {
+  '1': 'UpdateFCMTokenRequest',
+  '2': [
+    {'1': 'user_id', '3': 1, '4': 1, '5': 9, '10': 'userId'},
+    {'1': 'fcm_token', '3': 2, '4': 1, '5': 9, '10': 'fcmToken'},
+  ],
+};
+
+/// Descriptor for `UpdateFCMTokenRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List updateFCMTokenRequestDescriptor = $convert.base64Decode(
+    'ChVVcGRhdGVGQ01Ub2tlblJlcXVlc3QSFwoHdXNlcl9pZBgBIAEoCVIGdXNlcklkEhsKCWZjbV'
+    '90b2tlbhgCIAEoCVIIZmNtVG9rZW4=');
+
+@$core.Deprecated('Use updateFCMTokenResponseDescriptor instead')
+const UpdateFCMTokenResponse$json = {
+  '1': 'UpdateFCMTokenResponse',
+  '2': [
+    {'1': 'success', '3': 1, '4': 1, '5': 8, '10': 'success'},
+  ],
+};
+
+/// Descriptor for `UpdateFCMTokenResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List updateFCMTokenResponseDescriptor =
+    $convert.base64Decode(
+        'ChZVcGRhdGVGQ01Ub2tlblJlc3BvbnNlEhgKB3N1Y2Nlc3MYASABKAhSB3N1Y2Nlc3M=');
+
+@$core.Deprecated('Use getUserStatusRequestDescriptor instead')
+const GetUserStatusRequest$json = {
+  '1': 'GetUserStatusRequest',
+  '2': [
+    {'1': 'user_id', '3': 1, '4': 1, '5': 9, '10': 'userId'},
+  ],
+};
+
+/// Descriptor for `GetUserStatusRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List getUserStatusRequestDescriptor =
+    $convert.base64Decode(
+        'ChRHZXRVc2VyU3RhdHVzUmVxdWVzdBIXCgd1c2VyX2lkGAEgASgJUgZ1c2VySWQ=');
+
+@$core.Deprecated('Use getUserStatusResponseDescriptor instead')
+const GetUserStatusResponse$json = {
+  '1': 'GetUserStatusResponse',
+  '2': [
+    {'1': 'is_banned', '3': 1, '4': 1, '5': 8, '10': 'isBanned'},
+    {'1': 'ban_reason', '3': 2, '4': 1, '5': 9, '10': 'banReason'},
+    {'1': 'username', '3': 3, '4': 1, '5': 9, '10': 'username'},
+    {'1': 'phonk_level', '3': 4, '4': 1, '5': 9, '10': 'phonkLevel'},
+  ],
+};
+
+/// Descriptor for `GetUserStatusResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List getUserStatusResponseDescriptor = $convert.base64Decode(
+    'ChVHZXRVc2VyU3RhdHVzUmVzcG9uc2USGwoJaXNfYmFubmVkGAEgASgIUghpc0Jhbm5lZBIdCg'
+    'piYW5fcmVhc29uGAIgASgJUgliYW5SZWFzb24SGgoIdXNlcm5hbWUYAyABKAlSCHVzZXJuYW1l'
+    'Eh8KC3Bob25rX2xldmVsGAQgASgJUgpwaG9ua0xldmVs');

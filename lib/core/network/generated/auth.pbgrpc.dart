@@ -103,6 +103,42 @@ class AuthServiceClient extends $grpc.Client {
     return $createUnaryCall(_$verifyResetCode, request, options: options);
   }
 
+  /// Admin operations
+  $grpc.ResponseFuture<$0.BanUserResponse> banUser(
+    $0.BanUserRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$banUser, request, options: options);
+  }
+
+  $grpc.ResponseFuture<$0.UnbanUserResponse> unbanUser(
+    $0.UnbanUserRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$unbanUser, request, options: options);
+  }
+
+  $grpc.ResponseFuture<$0.PushNotificationResponse> sendPushNotification(
+    $0.PushNotificationRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$sendPushNotification, request, options: options);
+  }
+
+  $grpc.ResponseFuture<$0.UpdateFCMTokenResponse> updateFCMToken(
+    $0.UpdateFCMTokenRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$updateFCMToken, request, options: options);
+  }
+
+  $grpc.ResponseFuture<$0.GetUserStatusResponse> getUserStatus(
+    $0.GetUserStatusRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$getUserStatus, request, options: options);
+  }
+
   // method descriptors
 
   static final _$registerUser =
@@ -155,6 +191,31 @@ class AuthServiceClient extends $grpc.Client {
           '/auth.AuthService/VerifyResetCode',
           ($0.VerifyResetCodeRequest value) => value.writeToBuffer(),
           $0.VerifyResetCodeResponse.fromBuffer);
+  static final _$banUser =
+      $grpc.ClientMethod<$0.BanUserRequest, $0.BanUserResponse>(
+          '/auth.AuthService/BanUser',
+          ($0.BanUserRequest value) => value.writeToBuffer(),
+          $0.BanUserResponse.fromBuffer);
+  static final _$unbanUser =
+      $grpc.ClientMethod<$0.UnbanUserRequest, $0.UnbanUserResponse>(
+          '/auth.AuthService/UnbanUser',
+          ($0.UnbanUserRequest value) => value.writeToBuffer(),
+          $0.UnbanUserResponse.fromBuffer);
+  static final _$sendPushNotification = $grpc.ClientMethod<
+          $0.PushNotificationRequest, $0.PushNotificationResponse>(
+      '/auth.AuthService/SendPushNotification',
+      ($0.PushNotificationRequest value) => value.writeToBuffer(),
+      $0.PushNotificationResponse.fromBuffer);
+  static final _$updateFCMToken =
+      $grpc.ClientMethod<$0.UpdateFCMTokenRequest, $0.UpdateFCMTokenResponse>(
+          '/auth.AuthService/UpdateFCMToken',
+          ($0.UpdateFCMTokenRequest value) => value.writeToBuffer(),
+          $0.UpdateFCMTokenResponse.fromBuffer);
+  static final _$getUserStatus =
+      $grpc.ClientMethod<$0.GetUserStatusRequest, $0.GetUserStatusResponse>(
+          '/auth.AuthService/GetUserStatus',
+          ($0.GetUserStatusRequest value) => value.writeToBuffer(),
+          $0.GetUserStatusResponse.fromBuffer);
 }
 
 @$pb.GrpcServiceName('auth.AuthService')
@@ -242,6 +303,47 @@ abstract class AuthServiceBase extends $grpc.Service {
         ($core.List<$core.int> value) =>
             $0.VerifyResetCodeRequest.fromBuffer(value),
         ($0.VerifyResetCodeResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.BanUserRequest, $0.BanUserResponse>(
+        'BanUser',
+        banUser_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) => $0.BanUserRequest.fromBuffer(value),
+        ($0.BanUserResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.UnbanUserRequest, $0.UnbanUserResponse>(
+        'UnbanUser',
+        unbanUser_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) => $0.UnbanUserRequest.fromBuffer(value),
+        ($0.UnbanUserResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.PushNotificationRequest,
+            $0.PushNotificationResponse>(
+        'SendPushNotification',
+        sendPushNotification_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) =>
+            $0.PushNotificationRequest.fromBuffer(value),
+        ($0.PushNotificationResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.UpdateFCMTokenRequest,
+            $0.UpdateFCMTokenResponse>(
+        'UpdateFCMToken',
+        updateFCMToken_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) =>
+            $0.UpdateFCMTokenRequest.fromBuffer(value),
+        ($0.UpdateFCMTokenResponse value) => value.writeToBuffer()));
+    $addMethod(
+        $grpc.ServiceMethod<$0.GetUserStatusRequest, $0.GetUserStatusResponse>(
+            'GetUserStatus',
+            getUserStatus_Pre,
+            false,
+            false,
+            ($core.List<$core.int> value) =>
+                $0.GetUserStatusRequest.fromBuffer(value),
+            ($0.GetUserStatusResponse value) => value.writeToBuffer()));
   }
 
   $async.Future<$0.RegisterResponse> registerUser_Pre($grpc.ServiceCall $call,
@@ -328,4 +430,47 @@ abstract class AuthServiceBase extends $grpc.Service {
 
   $async.Future<$0.VerifyResetCodeResponse> verifyResetCode(
       $grpc.ServiceCall call, $0.VerifyResetCodeRequest request);
+
+  $async.Future<$0.BanUserResponse> banUser_Pre($grpc.ServiceCall $call,
+      $async.Future<$0.BanUserRequest> $request) async {
+    return banUser($call, await $request);
+  }
+
+  $async.Future<$0.BanUserResponse> banUser(
+      $grpc.ServiceCall call, $0.BanUserRequest request);
+
+  $async.Future<$0.UnbanUserResponse> unbanUser_Pre($grpc.ServiceCall $call,
+      $async.Future<$0.UnbanUserRequest> $request) async {
+    return unbanUser($call, await $request);
+  }
+
+  $async.Future<$0.UnbanUserResponse> unbanUser(
+      $grpc.ServiceCall call, $0.UnbanUserRequest request);
+
+  $async.Future<$0.PushNotificationResponse> sendPushNotification_Pre(
+      $grpc.ServiceCall $call,
+      $async.Future<$0.PushNotificationRequest> $request) async {
+    return sendPushNotification($call, await $request);
+  }
+
+  $async.Future<$0.PushNotificationResponse> sendPushNotification(
+      $grpc.ServiceCall call, $0.PushNotificationRequest request);
+
+  $async.Future<$0.UpdateFCMTokenResponse> updateFCMToken_Pre(
+      $grpc.ServiceCall $call,
+      $async.Future<$0.UpdateFCMTokenRequest> $request) async {
+    return updateFCMToken($call, await $request);
+  }
+
+  $async.Future<$0.UpdateFCMTokenResponse> updateFCMToken(
+      $grpc.ServiceCall call, $0.UpdateFCMTokenRequest request);
+
+  $async.Future<$0.GetUserStatusResponse> getUserStatus_Pre(
+      $grpc.ServiceCall $call,
+      $async.Future<$0.GetUserStatusRequest> $request) async {
+    return getUserStatus($call, await $request);
+  }
+
+  $async.Future<$0.GetUserStatusResponse> getUserStatus(
+      $grpc.ServiceCall call, $0.GetUserStatusRequest request);
 }

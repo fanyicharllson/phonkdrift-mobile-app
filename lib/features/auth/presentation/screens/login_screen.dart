@@ -4,6 +4,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/phonk_button.dart';
 import '../../../../core/widgets/phonk_error_banner.dart';
 import '../../../../core/widgets/phonk_toast.dart';
+import 'banned_screen.dart';
 import 'register_screen.dart';
 import '../../../track/presentation/screens/home_screen.dart';
 import 'forgot_password_screen.dart';
@@ -78,8 +79,26 @@ class _LoginScreenState extends State<LoginScreen> {
         email: _emailCtrl.text.trim(),
         password: _passCtrl.text,
       );
+
+      BanStatus banStatus = const BanStatus(isBanned: false, reason: '');
+      try {
+        banStatus = await AuthRepository.instance.checkBanStatus();
+      } catch (_) {
+        // If the ban check fails, continue to the app and let the monitor retry.
+      }
+
       if (!mounted) return;
       setState(() => _isLoading = false);
+
+      if (banStatus.isBanned) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (_) => BannedScreen(reason: banStatus.reason),
+          ),
+          (_) => false,
+        );
+        return;
+      }
 
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const HomeScreen()),

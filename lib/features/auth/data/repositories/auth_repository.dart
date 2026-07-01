@@ -4,6 +4,13 @@ import '../../../../core/network/grpc_client.dart';
 import '../../../../core/network/generated/auth.pb.dart';
 import '../../../../core/utils/storage_helper.dart';
 
+class BanStatus {
+  const BanStatus({required this.isBanned, required this.reason});
+
+  final bool isBanned;
+  final String reason;
+}
+
 class AuthException implements Exception {
   const AuthException(this.message);
   final String message;
@@ -58,16 +65,16 @@ class AuthRepository {
           GetUserRequest(userId: res.userId),
           options: CallOptions(
             metadata: {'authorization': 'Bearer ${res.token}'},
-            timeout: const Duration(seconds: 40), 
+            timeout: const Duration(seconds: 40),
           ),
         );
-        
+
         await _storage.saveUsername(userRes.user.username);
         if (userRes.user.phonkLevel.isNotEmpty) {
           await _storage.savePhonkLevel(userRes.user.phonkLevel);
         }
       } catch (e) {
-        debugPrint('GET_USER_ERROR: $e'); 
+        debugPrint('GET_USER_ERROR: $e');
       }
 
       return res;
@@ -128,6 +135,26 @@ class AuthRepository {
         GetUserRequest(userId: userId),
         options: _client.authCallOptions(token),
       );
+    } on GrpcError catch (e) {
+      throw AuthException(_grpcMessage(e));
+    }
+  }
+
+  // ── Ban status ────────────────────────────────────────────────────────────
+  Future<BanStatus> checkBanStatus() async {
+    try {
+      final userId = await _storage.getUserId() ?? '';
+      if (userId.isEmpty) {
+        return const BanStatus(isBanned: false, reason: '');
+      }
+
+      final token = await _storage.getToken() ?? '';
+      final res = await _client.auth.getUserStatus(
+        GetUserStatusRequest(userId: userId),
+        options: _client.authCallOptions(token),
+      );
+
+      return BanStatus(isBanned: res.isBanned, reason: res.banReason);
     } on GrpcError catch (e) {
       throw AuthException(_grpcMessage(e));
     }

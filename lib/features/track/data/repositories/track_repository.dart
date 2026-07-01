@@ -3,6 +3,20 @@ import '../../../../core/network/grpc_client.dart';
 import '../../../../core/network/generated/track.pb.dart';
 import '../../../../core/utils/storage_helper.dart';
 
+class ResolvedPlaybackUrl {
+  const ResolvedPlaybackUrl({
+    required this.url,
+    required this.linkExpiresAtEpochSeconds,
+    required this.fromStorage,
+  });
+
+  final String url;
+  final int linkExpiresAtEpochSeconds;
+  final bool fromStorage;
+
+  bool get isTemporary => !fromStorage;
+}
+
 class TrackException implements Exception {
   const TrackException(this.message);
   final String message;
@@ -16,6 +30,7 @@ class TrackRepository {
 
   final _client = PhonkGrpcClient.instance;
   final _storage = StorageHelper.instance;
+  final Map<String, StreamResponse> _streamCache = {};
 
   // ── Auth options helper — token attached to every track call ───────────────
   Future<CallOptions> _authOptions() async {
@@ -26,16 +41,15 @@ class TrackRepository {
   // ── Get For You / Trending tracks ─────────────────────────────────────────
   Future<List<TrackMetadata>> getForYouTracks({int limit = 20}) async {
     try {
-      final options = await _authOptions();
-      final res = await _client.track.getTrendingTracks(
-        TrendingRequest(limit: limit),
-        options: options,
+      final userId = await _storage.getUserId() ?? '';
+      final opts = await _authOptions();
+      final res = await _client.track.getForYou(
+        ForYouRequest(userId: userId, limit: limit),
+        options: opts,
       );
       return res.tracks;
     } on GrpcError catch (e) {
       throw TrackException(_grpcMessage(e));
-    } catch (e) {
-      throw TrackException('Could not load tracks. Try again.');
     }
   }
 
@@ -75,6 +89,47 @@ class TrackRepository {
     } catch (e) {
       throw TrackException('Could not get stream. Try again.');
     }
+  }
+
+  // ── Resolve playable URL (storage first, fallback to temporary stream) ────
+  Future<ResolvedPlaybackUrl> resolvePlaybackUrl(TrackMetadata track) async {
+    final storageUrl = track.storageUrl.trim();
+    if (storageUrl.isNotEmpty) {
+      return ResolvedPlaybackUrl(
+        url: storageUrl,
+        linkExpiresAtEpochSeconds: 0,
+        fromStorage: true,
+      );
+    }
+
+    final nowEpochSeconds = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final key = '${track.trackId}|${track.originalYoutubeId}';
+    final cached = _streamCache[key];
+
+    if (cached != null &&
+        cached.streamUrl.isNotEmpty &&
+        cached.linkExpiresAt.toInt() > nowEpochSeconds + 5) {
+      return ResolvedPlaybackUrl(
+        url: cached.streamUrl,
+        linkExpiresAtEpochSeconds: cached.linkExpiresAt.toInt(),
+        fromStorage: false,
+      );
+    }
+
+    final fetched = await getStreamUrl(track);
+    if (fetched.streamUrl.isEmpty) {
+      throw const TrackException('Empty stream URL from server.');
+    }
+
+    if (fetched.linkExpiresAt.toInt() > nowEpochSeconds) {
+      _streamCache[key] = fetched;
+    }
+
+    return ResolvedPlaybackUrl(
+      url: fetched.streamUrl,
+      linkExpiresAtEpochSeconds: fetched.linkExpiresAt.toInt(),
+      fromStorage: false,
+    );
   }
 
   // ── Recently played ────────────────────────────────────────────────────────
@@ -132,11 +187,7 @@ class TrackRepository {
 
       final options = await _authOptions();
       final res = await _client.track.setTrackInteraction(
-        InteractionRequest(
-          userId: userId,
-          trackId: trackId,
-          isLiked: isLiked,
-        ),
+        InteractionRequest(userId: userId, trackId: trackId, isLiked: isLiked),
         options: options,
       );
       return res.success;

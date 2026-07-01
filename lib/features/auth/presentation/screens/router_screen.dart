@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/utils/storage_helper.dart';
+import '../../data/repositories/auth_repository.dart';
+import 'banned_screen.dart';
 import 'onboarding_screen.dart';
 import 'login_screen.dart';
 import '../../../track/presentation/screens/home_screen.dart';
@@ -29,18 +31,30 @@ class _RouterScreenState extends State<RouterScreen> {
 
       if (!mounted) return;
 
-      if (isLoggedIn) {
-        _navigateTo(const HomeScreen());
+      if (!isLoggedIn) {
+        final hasSeenOnboarding = await storage.hasSeenOnboarding();
+        if (!mounted) return;
+
+        _navigateTo(
+          hasSeenOnboarding ? const LoginScreen() : const OnboardingScreen(),
+        );
         return;
       }
 
-      final hasSeenOnboarding = await storage.hasSeenOnboarding();
-      if (!mounted) return;
+      try {
+        final banStatus = await AuthRepository.instance.checkBanStatus();
+        if (!mounted) return;
 
-      _navigateTo(
-        hasSeenOnboarding ? const LoginScreen() : const OnboardingScreen(),
-      );
-    } catch (e) {
+        if (banStatus.isBanned) {
+          _navigateTo(BannedScreen(reason: banStatus.reason));
+          return;
+        }
+      } catch (_) {
+        // Ban check failed — let them in and recover on the next refresh.
+      }
+
+      _navigateTo(const HomeScreen());
+    } catch (_) {
       if (!mounted) return;
       setState(() {
         _errorMessage =
@@ -130,8 +144,7 @@ class _LoadingState extends StatelessWidget {
           height: 28,
           child: CircularProgressIndicator(
             strokeWidth: 2.5,
-            valueColor:
-                AlwaysStoppedAnimation<Color>(AppColors.phonkRed),
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.phonkRed),
           ),
         ),
         const SizedBox(height: 16),
@@ -179,8 +192,7 @@ class _ErrorState extends StatelessWidget {
           GestureDetector(
             onTap: onRetry,
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 28, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
               decoration: BoxDecoration(
                 color: AppColors.bgSurface,
                 borderRadius: BorderRadius.circular(12),

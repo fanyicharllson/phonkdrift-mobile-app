@@ -2,7 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:audio_session/audio_session.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../../../auth/data/repositories/auth_repository.dart';
+import '../../../auth/presentation/screens/banned_screen.dart';
 import '../../../../core/network/generated/track.pb.dart';
 import '../../data/repositories/track_repository.dart';
 
@@ -11,6 +12,10 @@ enum TrackLoadState { idle, loading, loaded, error }
 class TrackController extends ChangeNotifier {
   final _repo = TrackRepository.instance;
   final _player = AudioPlayer();
+  final Set<String> _likedTrackIds = {};
+  Set<String> get likedTrackIds => _likedTrackIds;
+
+  bool isLiked(String trackId) => _likedTrackIds.contains(trackId);
 
   // ── Telemetry sync timer ───────────────────────────────────────────────────
   Timer? _telemetryTimer;
@@ -30,6 +35,17 @@ class TrackController extends ChangeNotifier {
 
   List<TrackMetadata> get recentTracks => _recentTracks;
   TrackLoadState get recentState => _recentState;
+
+  // ── Search ────────────────────────────────────────────────────────────────
+  List<TrackMetadata> _searchTracks = [];
+  TrackLoadState _searchState = TrackLoadState.idle;
+  String _searchError = '';
+  int _searchPage = 1;
+  String _lastSearchQuery = '';
+
+  List<TrackMetadata> get searchTracks => _searchTracks;
+  TrackLoadState get searchState => _searchState;
+  String get searchError => _searchError;
 
   // ── Now Playing ────────────────────────────────────────────────────────────
   TrackMetadata? _nowPlaying;
@@ -105,10 +121,10 @@ class TrackController extends ChangeNotifier {
     });
   }
 
-  // ── Telemetry sync every 10s ───────────────────────────────────────────────
+  // ── Telemetry sync every 30s ───────────────────────────────────────────────
   void _startTelemetrySync() {
     _telemetryTimer?.cancel();
-    _telemetryTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+    _telemetryTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       if (_nowPlaying != null) {
         _repo.syncTelemetry(
           trackId: _nowPlaying!.trackId,
@@ -138,6 +154,43 @@ class TrackController extends ChangeNotifier {
     loadRecentlyPlayed();
   }
 
+  // TikTok-style like — instant optimistic toggle
+  Future<void> toggleLike(String trackId) async {
+    final wasLiked = _likedTrackIds.contains(trackId);
+    // Optimistic update — update UI instantly
+    if (wasLiked) {
+      _likedTrackIds.remove(trackId);
+    } else {
+      _likedTrackIds.add(trackId);
+    }
+    notifyListeners();
+
+    // Sync to backend
+    try {
+      final success = await _repo.setTrackInteraction(
+        trackId: trackId,
+        isLiked: !wasLiked,
+      );
+      if (!success) {
+        // Revert if backend rejected
+        if (wasLiked) {
+          _likedTrackIds.add(trackId);
+        } else {
+          _likedTrackIds.remove(trackId);
+        }
+        notifyListeners();
+      }
+    } catch (_) {
+      // Revert on error
+      if (wasLiked) {
+        _likedTrackIds.add(trackId);
+      } else {
+        _likedTrackIds.remove(trackId);
+      }
+      notifyListeners();
+    }
+  }
+
   // ── Play track ─────────────────────────────────────────────────────────────
   Future<void> playTrack(TrackMetadata track, BuildContext context) async {
     _playError = '';
@@ -149,6 +202,10 @@ class TrackController extends ChangeNotifier {
       return;
     }
 
+    // Always enforce ban check before starting a new track.
+    final allowed = await _ensurePlaybackAllowed(context);
+    if (!allowed) return;
+
     _nowPlaying = track;
     _isLoadingStream = true;
     _position = Duration.zero;
@@ -156,65 +213,50 @@ class TrackController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final streamRes = await _repo.getStreamUrl(track);
-      final streamUrl = streamRes.streamUrl;  
+      final resolved = await _repo.resolvePlaybackUrl(track);
+      final streamUrl = resolved.url;
       _isLoadingStream = false;
       notifyListeners();
 
-      // Strategy 1: Try playing directly in-app with just_audio
-      if (streamUrl.isNotEmpty && !_isYouTubeUrl(streamUrl)) {
-        try {
-          await _player.setUrl(streamUrl);
-          await _player.play();
-          return;
-        } catch (_) {
-          // Stream URL failed — fall through to YouTube
-        }
+      if (streamUrl.isEmpty) {
+        throw const TrackException('Playback URL is empty.');
       }
 
-      // Strategy 2: YouTube deep link
-      if (track.originalYoutubeId.isNotEmpty) {
-        final openedYouTube = await _openYouTube(track.originalYoutubeId);
-        if (openedYouTube) return;
-      }
-
-      // Strategy 3: Open stream URL in browser
-      if (streamUrl.isNotEmpty) {
-        final uri = Uri.parse(streamUrl);
-        if (await canLaunchUrl(uri)) {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-          return;
-        }
-      }
-
-      _playError =
-          'Could not play "${track.title}". Tap the track options (⋮) to open in YouTube manually.';
-      _nowPlaying = null;
-      notifyListeners();
+      await _player.setAudioSource(AudioSource.uri(Uri.parse(streamUrl)));
+      await _player.play();
     } catch (e) {
       _isLoadingStream = false;
-      _playError =
-          'Could not play "${track.title}". Tap the track options (⋮) to open in YouTube manually.';
+      _nowPlaying = null;
+      _playError = 'Could not play "${track.title}". Please try again.';
       notifyListeners();
     }
   }
 
-  Future<bool> _openYouTube(String youtubeId) async {
-    final ytApp = Uri.parse('vnd.youtube:$youtubeId');
-    final ytWeb = Uri.parse('https://www.youtube.com/watch?v=$youtubeId');
+  Future<bool> _ensurePlaybackAllowed(BuildContext context) async {
+    try {
+      final banStatus = await AuthRepository.instance.checkBanStatus();
+      if (!banStatus.isBanned) return true;
 
-    if (await canLaunchUrl(ytApp)) {
-      await launchUrl(ytApp);
-      return true;
-    } else if (await canLaunchUrl(ytWeb)) {
-      await launchUrl(ytWeb, mode: LaunchMode.externalApplication);
+      await _player.stop();
+      _stopTelemetrySync();
+      _nowPlaying = null;
+      _isPlaying = false;
+      _isLoadingStream = false;
+      notifyListeners();
+
+      if (!context.mounted) return false;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => BannedScreen(reason: banStatus.reason),
+        ),
+        (_) => false,
+      );
+      return false;
+    } catch (_) {
+      // Ban check failures are soft-fail so playback can continue.
       return true;
     }
-    return false;
   }
-
-  bool _isYouTubeUrl(String url) =>
-      url.contains('youtube.com') || url.contains('youtu.be');
 
   // ── Playback controls ──────────────────────────────────────────────────────
   Future<void> togglePlayPause() async {
@@ -267,6 +309,50 @@ class TrackController extends ChangeNotifier {
 
   Future<void> loadHomeData() async {
     await Future.wait([loadForYou(), loadRecentlyPlayed()]);
+  }
+
+  Future<void> search(String query, {bool loadMore = false}) async {
+    final normalized = query.trim();
+
+    if (normalized.isEmpty) {
+      _searchTracks = [];
+      _searchState = TrackLoadState.idle;
+      _searchError = '';
+      _searchPage = 1;
+      _lastSearchQuery = '';
+      notifyListeners();
+      return;
+    }
+
+    if (!loadMore || _lastSearchQuery != normalized) {
+      _searchPage = 1;
+      _searchTracks = [];
+    }
+
+    _lastSearchQuery = normalized;
+    _searchState = TrackLoadState.loading;
+    _searchError = '';
+    notifyListeners();
+
+    try {
+      final next = await _repo.searchTracks(
+        query: normalized,
+        page: _searchPage,
+      );
+      if (loadMore && _searchPage > 1) {
+        _searchTracks = [..._searchTracks, ...next];
+      } else {
+        _searchTracks = next;
+      }
+      if (next.isNotEmpty) {
+        _searchPage += 1;
+      }
+      _searchState = TrackLoadState.loaded;
+    } catch (e) {
+      _searchError = e.toString();
+      _searchState = TrackLoadState.error;
+    }
+    notifyListeners();
   }
 
   @override

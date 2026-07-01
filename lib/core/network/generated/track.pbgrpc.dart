@@ -20,7 +20,6 @@ import 'track.pb.dart' as $0;
 
 export 'track.pb.dart';
 
-/// Service managing track playback metadata, streaming sessions, and user interactions
 @$pb.GrpcServiceName('track.TrackService')
 class TrackServiceClient extends $grpc.Client {
   /// The hostname for this service.
@@ -55,7 +54,14 @@ class TrackServiceClient extends $grpc.Client {
     return $createUnaryCall(_$getTrendingTracks, request, options: options);
   }
 
-  /// TELEMETRY & PLAYBACK SYNC LAYER (SoundCloud Style)
+  $grpc.ResponseFuture<$0.ForYouResponse> getForYou(
+    $0.ForYouRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$getForYou, request, options: options);
+  }
+
+  /// TELEMETRY & PLAYBACK SYNC LAYER
   $grpc.ResponseFuture<$0.PlaybackTelemetryResponse> syncPlaybackTelemetry(
     $0.PlaybackTelemetryRequest request, {
     $grpc.CallOptions? options,
@@ -92,6 +98,56 @@ class TrackServiceClient extends $grpc.Client {
     return $createUnaryCall(_$addToPlaylist, request, options: options);
   }
 
+  /// — Admin operations
+  $grpc.ResponseFuture<$0.SeedTrackResponse> seedTrack(
+    $0.SeedTrackRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$seedTrack, request, options: options);
+  }
+
+  $grpc.ResponseFuture<$0.ListTracksAdminResponse> listTracksAdmin(
+    $0.ListTracksAdminRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$listTracksAdmin, request, options: options);
+  }
+
+  $grpc.ResponseFuture<$0.TrackActionResponse> approveTrack(
+    $0.TrackActionRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$approveTrack, request, options: options);
+  }
+
+  $grpc.ResponseFuture<$0.TrackActionResponse> rejectTrack(
+    $0.TrackActionRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$rejectTrack, request, options: options);
+  }
+
+  $grpc.ResponseFuture<$0.TrackActionResponse> featureTrack(
+    $0.FeatureTrackRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$featureTrack, request, options: options);
+  }
+
+  $grpc.ResponseFuture<$0.TrackActionResponse> deleteTrack(
+    $0.TrackActionRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$deleteTrack, request, options: options);
+  }
+
+  $grpc.ResponseFuture<$0.AdminStatsResponse> getAdminStats(
+    $0.Empty request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$getAdminStats, request, options: options);
+  }
+
   // method descriptors
 
   static final _$searchTrack =
@@ -109,6 +165,11 @@ class TrackServiceClient extends $grpc.Client {
           '/track.TrackService/GetTrendingTracks',
           ($0.TrendingRequest value) => value.writeToBuffer(),
           $0.TrendingResponse.fromBuffer);
+  static final _$getForYou =
+      $grpc.ClientMethod<$0.ForYouRequest, $0.ForYouResponse>(
+          '/track.TrackService/GetForYou',
+          ($0.ForYouRequest value) => value.writeToBuffer(),
+          $0.ForYouResponse.fromBuffer);
   static final _$syncPlaybackTelemetry = $grpc.ClientMethod<
           $0.PlaybackTelemetryRequest, $0.PlaybackTelemetryResponse>(
       '/track.TrackService/SyncPlaybackTelemetry',
@@ -134,6 +195,41 @@ class TrackServiceClient extends $grpc.Client {
           '/track.TrackService/AddToPlaylist',
           ($0.PlaylistTrackRequest value) => value.writeToBuffer(),
           $0.PlaylistActionResponse.fromBuffer);
+  static final _$seedTrack =
+      $grpc.ClientMethod<$0.SeedTrackRequest, $0.SeedTrackResponse>(
+          '/track.TrackService/SeedTrack',
+          ($0.SeedTrackRequest value) => value.writeToBuffer(),
+          $0.SeedTrackResponse.fromBuffer);
+  static final _$listTracksAdmin =
+      $grpc.ClientMethod<$0.ListTracksAdminRequest, $0.ListTracksAdminResponse>(
+          '/track.TrackService/ListTracksAdmin',
+          ($0.ListTracksAdminRequest value) => value.writeToBuffer(),
+          $0.ListTracksAdminResponse.fromBuffer);
+  static final _$approveTrack =
+      $grpc.ClientMethod<$0.TrackActionRequest, $0.TrackActionResponse>(
+          '/track.TrackService/ApproveTrack',
+          ($0.TrackActionRequest value) => value.writeToBuffer(),
+          $0.TrackActionResponse.fromBuffer);
+  static final _$rejectTrack =
+      $grpc.ClientMethod<$0.TrackActionRequest, $0.TrackActionResponse>(
+          '/track.TrackService/RejectTrack',
+          ($0.TrackActionRequest value) => value.writeToBuffer(),
+          $0.TrackActionResponse.fromBuffer);
+  static final _$featureTrack =
+      $grpc.ClientMethod<$0.FeatureTrackRequest, $0.TrackActionResponse>(
+          '/track.TrackService/FeatureTrack',
+          ($0.FeatureTrackRequest value) => value.writeToBuffer(),
+          $0.TrackActionResponse.fromBuffer);
+  static final _$deleteTrack =
+      $grpc.ClientMethod<$0.TrackActionRequest, $0.TrackActionResponse>(
+          '/track.TrackService/DeleteTrack',
+          ($0.TrackActionRequest value) => value.writeToBuffer(),
+          $0.TrackActionResponse.fromBuffer);
+  static final _$getAdminStats =
+      $grpc.ClientMethod<$0.Empty, $0.AdminStatsResponse>(
+          '/track.TrackService/GetAdminStats',
+          ($0.Empty value) => value.writeToBuffer(),
+          $0.AdminStatsResponse.fromBuffer);
 }
 
 @$pb.GrpcServiceName('track.TrackService')
@@ -162,6 +258,13 @@ abstract class TrackServiceBase extends $grpc.Service {
         false,
         ($core.List<$core.int> value) => $0.TrendingRequest.fromBuffer(value),
         ($0.TrendingResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.ForYouRequest, $0.ForYouResponse>(
+        'GetForYou',
+        getForYou_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) => $0.ForYouRequest.fromBuffer(value),
+        ($0.ForYouResponse value) => value.writeToBuffer()));
     $addMethod($grpc.ServiceMethod<$0.PlaybackTelemetryRequest,
             $0.PlaybackTelemetryResponse>(
         'SyncPlaybackTelemetry',
@@ -207,6 +310,65 @@ abstract class TrackServiceBase extends $grpc.Service {
             ($core.List<$core.int> value) =>
                 $0.PlaylistTrackRequest.fromBuffer(value),
             ($0.PlaylistActionResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.SeedTrackRequest, $0.SeedTrackResponse>(
+        'SeedTrack',
+        seedTrack_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) => $0.SeedTrackRequest.fromBuffer(value),
+        ($0.SeedTrackResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.ListTracksAdminRequest,
+            $0.ListTracksAdminResponse>(
+        'ListTracksAdmin',
+        listTracksAdmin_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) =>
+            $0.ListTracksAdminRequest.fromBuffer(value),
+        ($0.ListTracksAdminResponse value) => value.writeToBuffer()));
+    $addMethod(
+        $grpc.ServiceMethod<$0.TrackActionRequest, $0.TrackActionResponse>(
+            'ApproveTrack',
+            approveTrack_Pre,
+            false,
+            false,
+            ($core.List<$core.int> value) =>
+                $0.TrackActionRequest.fromBuffer(value),
+            ($0.TrackActionResponse value) => value.writeToBuffer()));
+    $addMethod(
+        $grpc.ServiceMethod<$0.TrackActionRequest, $0.TrackActionResponse>(
+            'RejectTrack',
+            rejectTrack_Pre,
+            false,
+            false,
+            ($core.List<$core.int> value) =>
+                $0.TrackActionRequest.fromBuffer(value),
+            ($0.TrackActionResponse value) => value.writeToBuffer()));
+    $addMethod(
+        $grpc.ServiceMethod<$0.FeatureTrackRequest, $0.TrackActionResponse>(
+            'FeatureTrack',
+            featureTrack_Pre,
+            false,
+            false,
+            ($core.List<$core.int> value) =>
+                $0.FeatureTrackRequest.fromBuffer(value),
+            ($0.TrackActionResponse value) => value.writeToBuffer()));
+    $addMethod(
+        $grpc.ServiceMethod<$0.TrackActionRequest, $0.TrackActionResponse>(
+            'DeleteTrack',
+            deleteTrack_Pre,
+            false,
+            false,
+            ($core.List<$core.int> value) =>
+                $0.TrackActionRequest.fromBuffer(value),
+            ($0.TrackActionResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.Empty, $0.AdminStatsResponse>(
+        'GetAdminStats',
+        getAdminStats_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) => $0.Empty.fromBuffer(value),
+        ($0.AdminStatsResponse value) => value.writeToBuffer()));
   }
 
   $async.Future<$0.SearchResponse> searchTrack_Pre(
@@ -233,6 +395,14 @@ abstract class TrackServiceBase extends $grpc.Service {
 
   $async.Future<$0.TrendingResponse> getTrendingTracks(
       $grpc.ServiceCall call, $0.TrendingRequest request);
+
+  $async.Future<$0.ForYouResponse> getForYou_Pre(
+      $grpc.ServiceCall $call, $async.Future<$0.ForYouRequest> $request) async {
+    return getForYou($call, await $request);
+  }
+
+  $async.Future<$0.ForYouResponse> getForYou(
+      $grpc.ServiceCall call, $0.ForYouRequest request);
 
   $async.Future<$0.PlaybackTelemetryResponse> syncPlaybackTelemetry_Pre(
       $grpc.ServiceCall $call,
@@ -277,4 +447,63 @@ abstract class TrackServiceBase extends $grpc.Service {
 
   $async.Future<$0.PlaylistActionResponse> addToPlaylist(
       $grpc.ServiceCall call, $0.PlaylistTrackRequest request);
+
+  $async.Future<$0.SeedTrackResponse> seedTrack_Pre($grpc.ServiceCall $call,
+      $async.Future<$0.SeedTrackRequest> $request) async {
+    return seedTrack($call, await $request);
+  }
+
+  $async.Future<$0.SeedTrackResponse> seedTrack(
+      $grpc.ServiceCall call, $0.SeedTrackRequest request);
+
+  $async.Future<$0.ListTracksAdminResponse> listTracksAdmin_Pre(
+      $grpc.ServiceCall $call,
+      $async.Future<$0.ListTracksAdminRequest> $request) async {
+    return listTracksAdmin($call, await $request);
+  }
+
+  $async.Future<$0.ListTracksAdminResponse> listTracksAdmin(
+      $grpc.ServiceCall call, $0.ListTracksAdminRequest request);
+
+  $async.Future<$0.TrackActionResponse> approveTrack_Pre(
+      $grpc.ServiceCall $call,
+      $async.Future<$0.TrackActionRequest> $request) async {
+    return approveTrack($call, await $request);
+  }
+
+  $async.Future<$0.TrackActionResponse> approveTrack(
+      $grpc.ServiceCall call, $0.TrackActionRequest request);
+
+  $async.Future<$0.TrackActionResponse> rejectTrack_Pre($grpc.ServiceCall $call,
+      $async.Future<$0.TrackActionRequest> $request) async {
+    return rejectTrack($call, await $request);
+  }
+
+  $async.Future<$0.TrackActionResponse> rejectTrack(
+      $grpc.ServiceCall call, $0.TrackActionRequest request);
+
+  $async.Future<$0.TrackActionResponse> featureTrack_Pre(
+      $grpc.ServiceCall $call,
+      $async.Future<$0.FeatureTrackRequest> $request) async {
+    return featureTrack($call, await $request);
+  }
+
+  $async.Future<$0.TrackActionResponse> featureTrack(
+      $grpc.ServiceCall call, $0.FeatureTrackRequest request);
+
+  $async.Future<$0.TrackActionResponse> deleteTrack_Pre($grpc.ServiceCall $call,
+      $async.Future<$0.TrackActionRequest> $request) async {
+    return deleteTrack($call, await $request);
+  }
+
+  $async.Future<$0.TrackActionResponse> deleteTrack(
+      $grpc.ServiceCall call, $0.TrackActionRequest request);
+
+  $async.Future<$0.AdminStatsResponse> getAdminStats_Pre(
+      $grpc.ServiceCall $call, $async.Future<$0.Empty> $request) async {
+    return getAdminStats($call, await $request);
+  }
+
+  $async.Future<$0.AdminStatsResponse> getAdminStats(
+      $grpc.ServiceCall call, $0.Empty request);
 }

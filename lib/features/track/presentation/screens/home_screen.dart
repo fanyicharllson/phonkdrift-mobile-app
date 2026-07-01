@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -21,6 +23,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _controller = TrackController();
   final _pageController = PageController();
+  final _searchCtrl = TextEditingController();
+  Timer? _searchDebounce;
 
   String _phonkLevel = '';
   String _username = '';
@@ -33,7 +37,16 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _controller.addListener(_onControllerUpdate);
+    _searchCtrl.addListener(_onSearchChanged);
     _loadData();
+  }
+
+  void _onSearchChanged() {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(
+      const Duration(milliseconds: 350),
+      () => _controller.search(_searchCtrl.text),
+    );
   }
 
   void _onControllerUpdate() {
@@ -86,6 +99,8 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     _controller.removeListener(_onControllerUpdate);
     _pageController.dispose();
+    _searchDebounce?.cancel();
+    _searchCtrl.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -142,7 +157,7 @@ class _HomeScreenState extends State<HomeScreen> {
             },
             children: [
               _buildHomePage(),
-              _buildPlaceholderPage('Search coming soon'),
+              _buildSearchPage(),
               _buildPlaceholderPage('Community coming soon'),
               _buildPlaceholderPage('Library coming soon'),
               _buildPlaceholderPage('Profile coming soon'),
@@ -181,7 +196,13 @@ class _HomeScreenState extends State<HomeScreen> {
             SliverToBoxAdapter(child: _buildHeader()),
             SliverToBoxAdapter(child: _buildStatsRow()),
             SliverToBoxAdapter(child: _buildCategoryPills()),
-            SliverToBoxAdapter(child: _buildSectionHeader('For You')),
+            SliverToBoxAdapter(
+              child: _buildSectionHeader(
+                'For You',
+                showSeeAll: true,
+                onSeeAll: () => _selectTab(1),
+              ),
+            ),
             SliverToBoxAdapter(child: _buildForYouSection()),
             SliverToBoxAdapter(
               child: _buildSectionHeader('Recently Played', showSeeAll: true),
@@ -210,6 +231,95 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildSearchPage() {
+    return Scaffold(
+      backgroundColor: AppColors.bgDeep,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+              child: TextField(
+                controller: _searchCtrl,
+                style: GoogleFonts.inter(
+                  color: AppColors.textPrimary,
+                  fontSize: 14,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Search tracks, artists, vibes...',
+                  prefixIcon: const Icon(Icons.search_rounded),
+                  suffixIcon: _searchCtrl.text.isEmpty
+                      ? null
+                      : IconButton(
+                          onPressed: () {
+                            _searchCtrl.clear();
+                            _controller.search('');
+                          },
+                          icon: const Icon(Icons.close_rounded),
+                        ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Builder(
+                builder: (_) {
+                  if (_searchCtrl.text.trim().isEmpty) {
+                    return const _EmptyTile(
+                      message: 'Search tracks to see CDN and streamed results.',
+                      icon: Icons.search_rounded,
+                    );
+                  }
+
+                  if (_controller.searchState == TrackLoadState.loading &&
+                      _controller.searchTracks.isEmpty) {
+                    return ListView.builder(
+                      padding: const EdgeInsets.only(top: 8),
+                      itemCount: 6,
+                      itemBuilder: (_, __) => const _ShimmerListTile(),
+                    );
+                  }
+
+                  if (_controller.searchState == TrackLoadState.error) {
+                    return _SmartErrorTile(
+                      message: _controller.searchError,
+                      onRetry: () => _controller.search(_searchCtrl.text),
+                      onLogin: () => Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
+                        (_) => false,
+                      ),
+                    );
+                  }
+
+                  if (_controller.searchTracks.isEmpty) {
+                    return const _EmptyTile(
+                      message: 'No tracks found for this search.',
+                      icon: Icons.music_note_rounded,
+                    );
+                  }
+
+                  return ListView.builder(
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: _controller.searchTracks.length,
+                    itemBuilder: (_, i) {
+                      final track = _controller.searchTracks[i];
+                      return _RecentTrackTile(
+                        track: track,
+                        isPlaying:
+                            _controller.nowPlaying?.trackId == track.trackId,
+                        onTap: () => _controller.playTrack(track, context),
+                        onOptionsTap: () => _showTrackOptions(track),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ── Header ────────────────────────────────────────────────────────────────
   Widget _buildHeader() {
     final displayName = _username.isNotEmpty ? _username : 'Drifter';
@@ -221,38 +331,45 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Greeting line
+                // Dynamic captivating greeting
                 Text(
-                  'Good ${_greeting()}, $displayName',
+                  _dynamicGreeting(displayName),
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w400,
+                    letterSpacing: 0.1,
                   ),
                 ),
                 const SizedBox(height: 4),
-                // App name + phonk level badge
                 Row(
                   children: [
                     Text(
                       'PhonkDrift',
                       style: GoogleFonts.inter(
-                        fontSize: 22,
+                        fontSize: 24,
                         fontWeight: FontWeight.w900,
                         color: AppColors.phonkRed,
-                        letterSpacing: -0.8,
+                        letterSpacing: -1,
                       ),
                     ),
                     if (_phonkLevel.isNotEmpty) ...[
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
-                          color: AppColors.phonkRed.withValues(alpha: 0.15),
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.phonkRed.withValues(alpha: 0.2),
+                              const Color(0xFF6B00FF).withValues(alpha: 0.15),
+                            ],
+                          ),
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(
-                            color: AppColors.phonkRed.withValues(alpha: 0.3),
+                            color: AppColors.phonkRed.withValues(alpha: 0.4),
                           ),
                         ),
                         child: Text(
@@ -260,9 +377,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               _phonkLevel.substring(1).toLowerCase(),
                           style: GoogleFonts.inter(
                             fontSize: 10,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w800,
                             color: AppColors.phonkRed,
-                            letterSpacing: 0.5,
+                            letterSpacing: 0.8,
                           ),
                         ),
                       ),
@@ -272,111 +389,260 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-          // Search icon
-          _NavIconBtn(
-            icon: Icons.search_rounded,
-            onTap: () => _selectTab(1),
-          ),
+
+          // Search
+          _NavIconBtn(icon: Icons.search_rounded, onTap: () => _selectTab(1)),
           const SizedBox(width: 8),
-          // Avatar / logout
-          GestureDetector(
-            onTap: _logout,
-            child: Container(
-              width: 38,
-              height: 38,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [AppColors.phonkRed, Color(0xFF8B0034)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+
+          // Profile avatar + 3-dot menu
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () => _selectTab(4),
+                child: Container(
+                  width: 38,
+                  height: 38,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [AppColors.phonkRed, Color(0xFF8B0034)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.person_outline_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                 ),
               ),
-              child: const Icon(
-                Icons.person_outline_rounded,
-                color: Colors.white,
-                size: 20,
+              const SizedBox(width: 6),
+              GestureDetector(
+                onTap: () => _showHeaderMenu(),
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: AppColors.bgSurface,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.borderSubtle),
+                  ),
+                  child: const Icon(
+                    Icons.more_vert_rounded,
+                    color: AppColors.textMuted,
+                    size: 18,
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         ],
       ),
     );
   }
 
+  // Dynamic captivating greetings — add this method to _HomeScreenState
+  String _dynamicGreeting(String name) {
+    final hour = DateTime.now().hour;
+    final greetings = {
+      'morning': [
+        'Rise and drift, $name',
+        'Morning shift starts now, $name',
+        'The underground never sleeps, $name',
+      ],
+      'afternoon': [
+        'Still drifting, $name?',
+        'Keep the energy up, $name',
+        'Midday phonk incoming, $name',
+      ],
+      'evening': [
+        'Night mode activated, $name',
+        'The drift gets darker, $name',
+        'Underground hour, $name',
+      ],
+    };
+
+    String period;
+    if (hour < 12) {
+      period = 'morning';
+    } else if (hour < 17) {
+      period = 'afternoon';
+    } else {
+      period = 'evening';
+    }
+
+    final list = greetings[period]!;
+    // Rotate based on day of month so it changes daily
+    return list[DateTime.now().day % list.length];
+  }
+
+  // Header 3-dot menu
+  void _showHeaderMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: const BoxDecoration(
+          color: AppColors.bgSurface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.borderSubtle,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                _MenuTile(
+                  icon: Icons.person_outline_rounded,
+                  label: 'Profile',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _selectTab(4);
+                  },
+                ),
+                _MenuTile(
+                  icon: Icons.settings_outlined,
+                  label: 'Settings',
+                  onTap: () {
+                    Navigator.pop(context);
+                  },
+                ),
+                _MenuTile(
+                  icon: Icons.info_outline_rounded,
+                  label: 'About PhonkDrift',
+                  onTap: () {
+                    Navigator.pop(context);
+                  },
+                ),
+                const Divider(color: AppColors.borderSubtle, height: 1),
+                _MenuTile(
+                  icon: Icons.logout_rounded,
+                  label: 'Sign Out',
+                  color: AppColors.phonkRed,
+                  onTap: _logout,
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   // ── Stats row ────────────────────────────────────────────────────────────
   Widget _buildStatsRow() {
-  return Container(
-    margin: const EdgeInsets.fromLTRB(24, 12, 24, 0),
-    decoration: BoxDecoration(
-      color: AppColors.bgSurface,
-      borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: AppColors.borderSubtle),
-    ),
-    child: IntrinsicHeight(
-      child: Row(
-        children: [
-          Expanded(child: _StatItem(icon: Icons.headphones_rounded, label: '0 played')),
-          VerticalDivider(color: AppColors.borderSubtle, thickness: 1, width: 1),
-          Expanded(child: _StatItem(icon: Icons.favorite_border_rounded, label: '0 liked')),
-          VerticalDivider(color: AppColors.borderSubtle, thickness: 1, width: 1),
-          Expanded(child: _StatItem(icon: Icons.queue_music_rounded, label: '0 saved')),
-        ],
+    return Container(
+      margin: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+      decoration: BoxDecoration(
+        color: AppColors.bgSurface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderSubtle),
       ),
-    ),
-  );
-}
+      child: IntrinsicHeight(
+        child: Row(
+          children: [
+            Expanded(
+              child: _StatItem(
+                icon: Icons.headphones_rounded,
+                label: '0 played',
+              ),
+            ),
+            VerticalDivider(
+              color: AppColors.borderSubtle,
+              thickness: 1,
+              width: 1,
+            ),
+            Expanded(
+              child: _StatItem(
+                icon: Icons.favorite_border_rounded,
+                label: '0 liked',
+              ),
+            ),
+            VerticalDivider(
+              color: AppColors.borderSubtle,
+              thickness: 1,
+              width: 1,
+            ),
+            Expanded(
+              child: _StatItem(
+                icon: Icons.queue_music_rounded,
+                label: '0 saved',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   // ── Category pills ────────────────────────────────────────────────────────
   Widget _buildCategoryPills() {
-  return SizedBox(
-    height: 48,
-    child: ListView.builder(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      itemCount: _categories.length,
-      itemBuilder: (_, i) {
-        final selected = _selectedCategory == i;
-        return GestureDetector(
-          onTap: () => setState(() => _selectedCategory = i),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            margin: const EdgeInsets.only(right: 10, top: 4, bottom: 4),
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            decoration: BoxDecoration(
-              color: selected ? AppColors.phonkRed : AppColors.bgSurface,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: selected ? AppColors.phonkRed : AppColors.borderSubtle,
+    return SizedBox(
+      height: 48,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        itemCount: _categories.length,
+        itemBuilder: (_, i) {
+          final selected = _selectedCategory == i;
+          return GestureDetector(
+            onTap: () => setState(() => _selectedCategory = i),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              margin: const EdgeInsets.only(right: 10, top: 4, bottom: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              decoration: BoxDecoration(
+                color: selected ? AppColors.phonkRed : AppColors.bgSurface,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: selected ? AppColors.phonkRed : AppColors.borderSubtle,
+                ),
+                boxShadow: selected
+                    ? [
+                        BoxShadow(
+                          color: AppColors.phonkRed.withValues(alpha: 0.3),
+                          blurRadius: 10,
+                        ),
+                      ]
+                    : [],
               ),
-              boxShadow: selected
-                  ? [BoxShadow(
-                      color: AppColors.phonkRed.withValues(alpha: 0.3),
-                      blurRadius: 10,
-                    )]
-                  : [],
-            ),
-            // Center child vertically — no vertical padding, use alignment
-            alignment: Alignment.center,
-            child: Text(
-              _categories[i],
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: selected ? Colors.white : AppColors.textSecondary,
-                height: 1.0,
+              // Center child vertically — no vertical padding, use alignment
+              alignment: Alignment.center,
+              child: Text(
+                _categories[i],
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: selected ? Colors.white : AppColors.textSecondary,
+                  height: 1.0,
+                ),
               ),
             ),
-          ),
-        );
-      },
-    ),
-  );
-}
+          );
+        },
+      ),
+    );
+  }
+
   // ── Section header ────────────────────────────────────────────────────────
-  Widget _buildSectionHeader(String title, {bool showSeeAll = false}) {
+  Widget _buildSectionHeader(
+    String title, {
+    bool showSeeAll = false,
+    VoidCallback? onSeeAll,
+  }) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 14),
+      padding: const EdgeInsets.fromLTRB(24, 28, 24, 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -390,12 +656,15 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           if (showSeeAll)
-            Text(
-              'See all',
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                color: AppColors.phonkRed,
-                fontWeight: FontWeight.w600,
+            GestureDetector(
+              onTap: onSeeAll,
+              child: Text(
+                'See all',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  color: AppColors.phonkRed,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
         ],
@@ -412,8 +681,7 @@ class _HomeScreenState extends State<HomeScreen> {
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 24),
           itemCount: 4,
-          itemBuilder: (_, __) =>
-              const _ShimmerCard(width: 160, height: 210),
+          itemBuilder: (_, __) => const _ShimmerCard(width: 160, height: 210),
         ),
       );
     }
@@ -439,13 +707,16 @@ class _HomeScreenState extends State<HomeScreen> {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 24),
         itemCount: _controller.forYouTracks.length,
-        itemBuilder: (_, i) => _ForYouCard(
-          track: _controller.forYouTracks[i],
-          onTap: () =>
-              _controller.playTrack(_controller.forYouTracks[i], context),
-          onOptionsTap: () =>
-              _openTrackOptions(_controller.forYouTracks[i]),
-        ),
+        itemBuilder: (_, i) {
+          final track = _controller.forYouTracks[i];
+          return _ForYouCard(
+            track: track,
+            isLiked: _controller.isLiked(track.trackId),
+            onLike: () => _controller.toggleLike(track.trackId),
+            onTap: () => _controller.playTrack(track, context),
+            onOptionsTap: () => _showTrackOptions(track),
+          );
+        },
       ),
     );
   }
@@ -474,12 +745,12 @@ class _HomeScreenState extends State<HomeScreen> {
       delegate: SliverChildBuilderDelegate(
         (_, i) => _RecentTrackTile(
           track: _controller.recentTracks[i],
-          isPlaying: _controller.nowPlaying?.trackId ==
+          isPlaying:
+              _controller.nowPlaying?.trackId ==
               _controller.recentTracks[i].trackId,
-          onTap: () => _controller.playTrack(
-              _controller.recentTracks[i], context),
-          onOptionsTap: () =>
-              _openTrackOptions(_controller.recentTracks[i]),
+          onTap: () =>
+              _controller.playTrack(_controller.recentTracks[i], context),
+          onOptionsTap: () => _openTrackOptions(_controller.recentTracks[i]),
         ),
         childCount: _controller.recentTracks.length,
       ),
@@ -490,141 +761,203 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildMiniPlayer() {
     final track = _controller.nowPlaying!;
     final progress = _controller.duration.inSeconds > 0
-        ? (_controller.position.inSeconds /
-                _controller.duration.inSeconds)
-            .clamp(0.0, 1.0)
+        ? (_controller.position.inSeconds / _controller.duration.inSeconds)
+              .clamp(0.0, 1.0)
         : 0.0;
 
     return GestureDetector(
-      onTap: () => _controller.playTrack(track, context),
+      onTap: () {
+        // TODO: Navigate to full player screen
+      },
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16),
+        margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
         decoration: BoxDecoration(
-          color: AppColors.bgElevated.withValues(alpha: 0.95),
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.bgElevated,
+              AppColors.phonkRed.withValues(alpha: 0.12),
+            ],
+          ),
           border: Border.all(
-            color: AppColors.phonkRed.withValues(alpha: 0.3),
+            color: AppColors.phonkRed.withValues(alpha: 0.25),
+            width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: AppColors.phonkRed.withValues(alpha: 0.12),
-              blurRadius: 24,
-              offset: const Offset(0, -4),
+              color: AppColors.phonkRed.withValues(alpha: 0.2),
+              blurRadius: 30,
+              spreadRadius: 0,
+              offset: const Offset(0, -6),
             ),
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.4),
+              color: Colors.black.withValues(alpha: 0.5),
               blurRadius: 20,
               offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: track.thumbnailUrl.isNotEmpty
-                        ? CachedNetworkImage(
-                            imageUrl: track.thumbnailUrl,
-                            width: 44,
-                            height: 44,
-                            fit: BoxFit.cover,
-                            errorWidget: (_, __, ___) =>
-                                _TrackPlaceholder(size: 44),
-                          )
-                        : _TrackPlaceholder(size: 44),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          track.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          track.artistName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            color: AppColors.textMuted,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (_controller.isLoadingStream)
-                    const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.phonkRed,
-                      ),
-                    )
-                  else
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            _controller.togglePlayPause();
-                          },
-                          child: Icon(
-                            _controller.isPlaying
-                                ? Icons.pause_rounded
-                                : Icons.play_arrow_rounded,
-                            color: AppColors.phonkRed,
-                            size: 28,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        GestureDetector(
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            _controller.clearNowPlaying();
-                          },
-                          child: const Icon(
-                            Icons.close_rounded,
-                            color: AppColors.textMuted,
-                            size: 20,
-                          ),
-                        ),
-                      ],
-                    ),
-                ],
-              ),
-            ),
-            // Progress bar
-            ClipRRect(
-              borderRadius:
-                  const BorderRadius.vertical(bottom: Radius.circular(18)),
-              child: LinearProgressIndicator(
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Progress bar at TOP of mini player
+              LinearProgressIndicator(
                 value: progress,
-                backgroundColor: AppColors.borderSubtle,
-                valueColor:
-                    const AlwaysStoppedAnimation(AppColors.phonkRed),
-                minHeight: 3,
+                backgroundColor: Colors.transparent,
+                valueColor: const AlwaysStoppedAnimation(AppColors.phonkRed),
+                minHeight: 2,
               ),
-            ),
-          ],
+
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+                child: Row(
+                  children: [
+                    // Thumbnail with playing indicator
+                    Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: track.thumbnailUrl.isNotEmpty
+                              ? CachedNetworkImage(
+                                  imageUrl: track.thumbnailUrl,
+                                  width: 46,
+                                  height: 46,
+                                  fit: BoxFit.cover,
+                                  errorWidget: (_, __, ___) =>
+                                      _TrackPlaceholder(size: 46),
+                                )
+                              : _TrackPlaceholder(size: 46),
+                        ),
+                        if (_controller.isPlaying)
+                          Positioned.fill(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.3),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.equalizer_rounded,
+                                color: AppColors.phonkRed,
+                                size: 18,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+
+                    const SizedBox(width: 12),
+
+                    // Track info
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            track.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Row(
+                            children: [
+                              Text(
+                                track.artistName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.inter(
+                                  fontSize: 11,
+                                  color: AppColors.textMuted,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              // Position / duration
+                              Text(
+                                '${_formatDuration(_controller.position)} / ${_formatDuration(_controller.duration)}',
+                                style: GoogleFonts.inter(
+                                  fontSize: 10,
+                                  color: AppColors.textMuted,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(width: 8),
+
+                    // Controls
+                    if (_controller.isLoadingStream)
+                      const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.phonkRed,
+                        ),
+                      )
+                    else
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              _controller.togglePlayPause();
+                            },
+                            child: Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: AppColors.phonkRed,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                _controller.isPlaying
+                                    ? Icons.pause_rounded
+                                    : Icons.play_arrow_rounded,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          GestureDetector(
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              _controller.clearNowPlaying();
+                            },
+                            child: const Icon(
+                              Icons.close_rounded,
+                              color: AppColors.textMuted,
+                              size: 18,
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  String _formatDuration(Duration d) {
+    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$m:$s';
   }
 
   // ── Floating nav — FIXED overflow ─────────────────────────────────────────
@@ -676,9 +1009,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Icon(
                     selected ? tab.$1 : tab.$2,
-                    color: selected
-                        ? AppColors.phonkRed
-                        : AppColors.textMuted,
+                    color: selected ? AppColors.phonkRed : AppColors.textMuted,
                     size: 20,
                   ),
                   // Only show label for selected tab
@@ -703,6 +1034,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ── Track options bottom sheet ────────────────────────────────────────────
+  Future<void> _showTrackOptions(TrackMetadata track) =>
+      _openTrackOptions(track);
+
   Future<void> _openTrackOptions(TrackMetadata track) async {
     await showModalBottomSheet<void>(
       context: context,
@@ -747,7 +1081,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       ? '\nhttps://www.youtube.com/watch?v=${track.originalYoutubeId}'
                       : '';
                   Share.share(
-                      '${track.title} by ${track.artistName}$youtubeUrl');
+                    '${track.title} by ${track.artistName}$youtubeUrl',
+                  );
                 },
               ),
               _TrackOptionTile(
@@ -761,12 +1096,35 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+}
 
-  String _greeting() {
-    final h = DateTime.now().hour;
-    if (h < 12) return 'morning';
-    if (h < 17) return 'afternoon';
-    return 'evening';
+class _MenuTile extends StatelessWidget {
+  const _MenuTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.color,
+  });
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon, color: color ?? AppColors.textSecondary, size: 22),
+      title: Text(
+        label,
+        style: GoogleFonts.inter(
+          fontSize: 15,
+          fontWeight: FontWeight.w500,
+          color: color ?? AppColors.textPrimary,
+        ),
+      ),
+      onTap: onTap,
+      dense: true,
+    );
   }
 }
 
@@ -784,7 +1142,8 @@ class _SmartErrorTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final lower = message.toLowerCase();
-    final isAuthError = lower.contains('token') ||
+    final isAuthError =
+        lower.contains('token') ||
         lower.contains('auth') ||
         lower.contains('unauthenticated');
     final isNetworkError =
@@ -793,8 +1152,8 @@ class _SmartErrorTile extends StatelessWidget {
     final displayMessage = isAuthError
         ? 'Sign in required to load tracks.'
         : isNetworkError
-            ? 'No connection. Check your internet.'
-            : 'Could not load tracks.';
+        ? 'No connection. Check your internet.'
+        : 'Could not load tracks.';
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -808,9 +1167,7 @@ class _SmartErrorTile extends StatelessWidget {
         child: Column(
           children: [
             Icon(
-              isAuthError
-                  ? Icons.lock_outline_rounded
-                  : Icons.wifi_off_rounded,
+              isAuthError ? Icons.lock_outline_rounded : Icons.wifi_off_rounded,
               color: AppColors.textMuted,
               size: 28,
             ),
@@ -847,7 +1204,7 @@ class _StatItem extends StatelessWidget {
   const _StatItem({required this.icon, required this.label});
   final IconData icon;
   final String label;
- 
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -865,7 +1222,7 @@ class _StatItem extends StatelessWidget {
               fontSize: 12,
               color: AppColors.textMuted,
               fontWeight: FontWeight.w500,
-              height: 1.0, 
+              height: 1.0,
             ),
           ),
         ],
@@ -875,61 +1232,172 @@ class _StatItem extends StatelessWidget {
 }
 
 // ── For You Card ──────────────────────────────────────────────────────────────
-class _ForYouCard extends StatelessWidget {
+class _ForYouCard extends StatefulWidget {
   const _ForYouCard({
     required this.track,
     required this.onTap,
     required this.onOptionsTap,
+    required this.isLiked,
+    required this.onLike,
   });
   final TrackMetadata track;
   final VoidCallback onTap;
   final VoidCallback onOptionsTap;
+  final bool isLiked;
+  final VoidCallback onLike;
+
+  @override
+  State<_ForYouCard> createState() => _ForYouCardState();
+}
+
+class _ForYouCardState extends State<_ForYouCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _likeController;
+  late Animation<double> _likeScale;
+
+  @override
+  void initState() {
+    super.initState();
+    _likeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _likeScale = Tween<double>(
+      begin: 1.0,
+      end: 1.4,
+    ).animate(CurvedAnimation(parent: _likeController, curve: Curves.easeOut));
+  }
+
+  @override
+  void dispose() {
+    _likeController.dispose();
+    super.dispose();
+  }
+
+  void _handleLike() {
+    HapticFeedback.mediumImpact();
+    _likeController.forward().then((_) => _likeController.reverse());
+    widget.onLike();
+  }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: widget.onTap,
       child: Container(
-        width: 160,
+        width: 165,
         margin: const EdgeInsets.only(right: 14),
         decoration: BoxDecoration(
           color: AppColors.bgSurface,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(color: AppColors.borderSubtle),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Thumbnail with overlays
             Stack(
               children: [
                 ClipRRect(
                   borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(16)),
-                  child: track.thumbnailUrl.isNotEmpty
+                    top: Radius.circular(18),
+                  ),
+                  child: widget.track.thumbnailUrl.isNotEmpty
                       ? CachedNetworkImage(
-                          imageUrl: track.thumbnailUrl,
-                          width: 160,
-                          height: 120,
+                          imageUrl: widget.track.thumbnailUrl,
+                          width: 165,
+                          height: 125,
                           fit: BoxFit.cover,
                           errorWidget: (_, __, ___) =>
-                              _TrackPlaceholder(size: 120, width: 160),
+                              _TrackPlaceholder(size: 125, width: 165),
                         )
-                      : _TrackPlaceholder(size: 120, width: 160),
+                      : _TrackPlaceholder(size: 125, width: 165),
                 ),
+                // Gradient overlay bottom of image
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    height: 50,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withValues(alpha: 0.6),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                // 3-dot options top right
                 Positioned(
                   top: 6,
                   right: 6,
-                  child: _TrackMoreButton(onTap: onOptionsTap),
+                  child: GestureDetector(
+                    onTap: widget.onOptionsTap,
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.more_vert_rounded,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: _SourceBadge(storageUrl: widget.track.storageUrl),
+                ),
+                // Play count bottom left
+                Positioned(
+                  bottom: 6,
+                  left: 8,
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.play_arrow_rounded,
+                        color: Colors.white70,
+                        size: 12,
+                      ),
+                      const SizedBox(width: 2),
+                      Text(
+                        _formatCount(widget.track.playCount),
+                        style: GoogleFonts.inter(
+                          fontSize: 10,
+                          color: Colors.white70,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
+
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    track.title,
+                    widget.track.title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.inter(
@@ -938,9 +1406,9 @@ class _ForYouCard extends StatelessWidget {
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 2),
                   Text(
-                    track.artistName,
+                    widget.track.artistName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.inter(
@@ -950,15 +1418,43 @@ class _ForYouCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Icon(Icons.play_circle_filled_rounded,
-                          color: AppColors.phonkRed, size: 16),
-                      const SizedBox(width: 4),
                       Text(
-                        track.duration,
+                        widget.track.duration,
                         style: GoogleFonts.inter(
                           fontSize: 11,
                           color: AppColors.textMuted,
+                        ),
+                      ),
+                      // TikTok-style like button
+                      GestureDetector(
+                        onTap: _handleLike,
+                        child: ScaleTransition(
+                          scale: _likeScale,
+                          child: Row(
+                            children: [
+                              Icon(
+                                widget.isLiked
+                                    ? Icons.favorite_rounded
+                                    : Icons.favorite_border_rounded,
+                                color: widget.isLiked
+                                    ? AppColors.phonkRed
+                                    : AppColors.textMuted,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 3),
+                              Text(
+                                _formatCount(widget.track.likesCount),
+                                style: GoogleFonts.inter(
+                                  fontSize: 11,
+                                  color: widget.isLiked
+                                      ? AppColors.phonkRed
+                                      : AppColors.textMuted,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -971,6 +1467,12 @@ class _ForYouCard extends StatelessWidget {
       ),
     );
   }
+}
+
+String _formatCount(int count) {
+  if (count >= 1000000) return '${(count / 1000000).toStringAsFixed(1)}M';
+  if (count >= 1000) return '${(count / 1000).toStringAsFixed(1)}K';
+  return '$count';
 }
 
 // ── Recently Played Tile ──────────────────────────────────────────────────────
@@ -1014,8 +1516,7 @@ class _RecentTrackTile extends StatelessWidget {
                       width: 48,
                       height: 48,
                       fit: BoxFit.cover,
-                      errorWidget: (_, __, ___) =>
-                          _TrackPlaceholder(size: 48),
+                      errorWidget: (_, __, ___) => _TrackPlaceholder(size: 48),
                     )
                   : _TrackPlaceholder(size: 48),
             ),
@@ -1048,8 +1549,12 @@ class _RecentTrackTile extends StatelessWidget {
             Text(
               track.duration,
               style: GoogleFonts.inter(
-                  fontSize: 12, color: AppColors.textMuted),
+                fontSize: 12,
+                color: AppColors.textMuted,
+              ),
             ),
+            const SizedBox(width: 6),
+            _SourceBadge(storageUrl: track.storageUrl, compact: true),
             const SizedBox(width: 6),
             _TrackMoreButton(onTap: onOptionsTap),
             const SizedBox(width: 6),
@@ -1057,8 +1562,7 @@ class _RecentTrackTile extends StatelessWidget {
               isPlaying
                   ? Icons.equalizer_rounded
                   : Icons.play_circle_outline_rounded,
-              color:
-                  isPlaying ? AppColors.phonkRed : AppColors.textMuted,
+              color: isPlaying ? AppColors.phonkRed : AppColors.textMuted,
               size: 24,
             ),
           ],
@@ -1080,8 +1584,11 @@ class _TrackPlaceholder extends StatelessWidget {
       width: width ?? size,
       height: size,
       color: AppColors.bgElevated,
-      child: const Icon(Icons.music_note_rounded,
-          color: AppColors.textMuted, size: 24),
+      child: const Icon(
+        Icons.music_note_rounded,
+        color: AppColors.textMuted,
+        size: 24,
+      ),
     );
   }
 }
@@ -1125,8 +1632,11 @@ class _TrackMoreButton extends StatelessWidget {
           shape: BoxShape.circle,
           border: Border.all(color: AppColors.borderSubtle),
         ),
-        child: const Icon(Icons.more_vert,
-            color: AppColors.textPrimary, size: 18),
+        child: const Icon(
+          Icons.more_vert,
+          color: AppColors.textPrimary,
+          size: 18,
+        ),
       ),
     );
   }
@@ -1154,6 +1664,61 @@ class _TrackOptionTile extends StatelessWidget {
         ),
       ),
       onTap: onTap,
+    );
+  }
+}
+
+class _SourceBadge extends StatelessWidget {
+  const _SourceBadge({required this.storageUrl, this.compact = false});
+
+  final String storageUrl;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final isCdn = storageUrl.trim().isNotEmpty;
+    final bg = isCdn
+        ? AppColors.phonkRed.withValues(alpha: 0.2)
+        : AppColors.bgElevated.withValues(alpha: 0.85);
+    final border = isCdn
+        ? AppColors.phonkRed.withValues(alpha: 0.6)
+        : AppColors.borderSubtle;
+    final color = isCdn ? AppColors.phonkRed : AppColors.textMuted;
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 6 : 7,
+        vertical: compact ? 3 : 4,
+      ),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isCdn
+                ? Icons.play_circle_filled_rounded
+                : Icons.wifi_tethering_rounded,
+            color: color,
+            size: compact ? 12 : 13,
+          ),
+          if (!compact) ...[
+            const SizedBox(width: 4),
+            Text(
+              isCdn ? 'CDN' : 'STREAM',
+              style: GoogleFonts.inter(
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                color: color,
+                letterSpacing: 0.4,
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -1204,14 +1769,16 @@ class _EmptyTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       child: Column(
         children: [
-          Icon(icon ?? Icons.music_off_rounded,
-              color: AppColors.textMuted, size: 32),
+          Icon(
+            icon ?? Icons.music_off_rounded,
+            color: AppColors.textMuted,
+            size: 32,
+          ),
           const SizedBox(height: 8),
           Text(
             message,
             textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
-                fontSize: 13, color: AppColors.textMuted),
+            style: GoogleFonts.inter(fontSize: 13, color: AppColors.textMuted),
           ),
         ],
       ),
