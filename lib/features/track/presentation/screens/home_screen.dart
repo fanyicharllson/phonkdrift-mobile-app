@@ -201,6 +201,8 @@ class _HomeScreenState extends State<HomeScreen> {
               child: _buildSectionHeader(
                 'For You',
                 showSeeAll: true,
+                seeAllLabel: 'Trending Phonk',
+                seeAllIcon: Icons.trending_up_rounded,
                 onSeeAll: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const TrendingScreen()),
@@ -394,7 +396,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-         
+
           // Profile avatar + 3-dot menu
           Row(
             children: [
@@ -648,6 +650,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildSectionHeader(
     String title, {
     bool showSeeAll = false,
+    String seeAllLabel = 'See all',
+    IconData seeAllIcon = Icons.arrow_forward_rounded,
     VoidCallback? onSeeAll,
   }) {
     return Padding(
@@ -667,13 +671,20 @@ class _HomeScreenState extends State<HomeScreen> {
           if (showSeeAll)
             GestureDetector(
               onTap: onSeeAll,
-              child: Text(
-                'See all',
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  color: AppColors.phonkRed,
-                  fontWeight: FontWeight.w600,
-                ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(seeAllIcon, size: 16, color: AppColors.phonkRed),
+                  const SizedBox(width: 4),
+                  Text(
+                    seeAllLabel,
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: AppColors.phonkRed,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             ),
         ],
@@ -722,6 +733,7 @@ class _HomeScreenState extends State<HomeScreen> {
           final track = _controller.forYouTracks[i];
           return _ForYouCard(
             track: track,
+            isPlaying: _controller.nowPlaying?.trackId == track.trackId,
             isLiked: _controller.isLiked(track.trackId),
             onLike: () => _controller.toggleLike(track.trackId),
             onTap: () => _controller.playTrack(track, context),
@@ -1250,12 +1262,14 @@ class _ForYouCard extends StatefulWidget {
     required this.track,
     required this.onTap,
     required this.onOptionsTap,
+    required this.isPlaying,
     required this.isLiked,
     required this.onLike,
   });
   final TrackMetadata track;
   final VoidCallback onTap;
   final VoidCallback onOptionsTap;
+  final bool isPlaying;
   final bool isLiked;
   final VoidCallback onLike;
 
@@ -1301,12 +1315,21 @@ class _ForYouCardState extends State<_ForYouCard>
         width: 165,
         margin: const EdgeInsets.only(right: 14),
         decoration: BoxDecoration(
-          color: AppColors.bgSurface,
+          color: widget.isPlaying
+              ? AppColors.phonkRed.withValues(alpha: 0.07)
+              : AppColors.bgSurface,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: AppColors.borderSubtle),
+          border: Border.all(
+            color: widget.isPlaying
+                ? AppColors.phonkRed.withValues(alpha: 0.42)
+                : AppColors.borderSubtle,
+            width: widget.isPlaying ? 1.5 : 1,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
+              color: widget.isPlaying
+                  ? AppColors.phonkRed.withValues(alpha: 0.16)
+                  : Colors.black.withValues(alpha: 0.2),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -1378,6 +1401,44 @@ class _ForYouCardState extends State<_ForYouCard>
                   left: 8,
                   child: _SourceBadge(storageUrl: widget.track.storageUrl),
                 ),
+                if (widget.isPlaying)
+                  Positioned(
+                    top: 8,
+                    right: 36,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: AppColors.phonkRed.withValues(alpha: 0.5),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.equalizer_rounded,
+                            size: 12,
+                            color: AppColors.phonkRed,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Playing',
+                            style: GoogleFonts.inter(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 // Play count bottom left
                 Positioned(
                   bottom: 6,
@@ -1605,7 +1666,6 @@ class _TrackPlaceholder extends StatelessWidget {
     );
   }
 }
-
 
 class _TrackMoreButton extends StatelessWidget {
   const _TrackMoreButton({required this.onTap});
