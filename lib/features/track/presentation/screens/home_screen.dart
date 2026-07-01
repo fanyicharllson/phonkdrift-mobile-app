@@ -11,6 +11,7 @@ import '../../../../core/network/generated/track.pb.dart';
 import '../../../../core/utils/storage_helper.dart';
 import '../../../../core/widgets/phonk_toast.dart';
 import '../controllers/track_controller.dart';
+import 'trending_screen.dart';
 import '../../../auth/presentation/screens/login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -200,7 +201,11 @@ class _HomeScreenState extends State<HomeScreen> {
               child: _buildSectionHeader(
                 'For You',
                 showSeeAll: true,
-                onSeeAll: () => _selectTab(1),
+                onSeeAll: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const TrendingScreen()),
+                  );
+                },
               ),
             ),
             SliverToBoxAdapter(child: _buildForYouSection()),
@@ -391,8 +396,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
 
           // Search
-          _NavIconBtn(icon: Icons.search_rounded, onTap: () => _selectTab(1)),
-          const SizedBox(width: 8),
+          // _NavIconBtn(icon: Icons.search_rounded, onTap: () => _selectTab(1)),
+          // const SizedBox(width: 8),
 
           // Profile avatar + 3-dot menu
           Row(
@@ -542,8 +547,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ── Stats row ────────────────────────────────────────────────────────────
   Widget _buildStatsRow() {
+    final playedCount = _controller.recentTracks.length;
+    final likedCount = _controller.likedTrackIds.length;
+    final savedCount = _controller.forYouTracks
+        .map((t) => t.trackId)
+        .where((id) => id.isNotEmpty)
+        .toSet()
+        .length;
+
     return Container(
-      margin: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+      margin: const EdgeInsets.fromLTRB(24, 12, 24, 10),
       decoration: BoxDecoration(
         color: AppColors.bgSurface,
         borderRadius: BorderRadius.circular(14),
@@ -555,7 +568,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(
               child: _StatItem(
                 icon: Icons.headphones_rounded,
-                label: '0 played',
+                label: '$playedCount played',
               ),
             ),
             VerticalDivider(
@@ -566,7 +579,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(
               child: _StatItem(
                 icon: Icons.favorite_border_rounded,
-                label: '0 liked',
+                label: '$likedCount liked',
               ),
             ),
             VerticalDivider(
@@ -577,7 +590,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(
               child: _StatItem(
                 icon: Icons.queue_music_rounded,
-                label: '0 saved',
+                label: '$savedCount saved',
               ),
             ),
           ],
@@ -706,7 +719,9 @@ class _HomeScreenState extends State<HomeScreen> {
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 24),
-        itemCount: _controller.forYouTracks.length,
+        itemCount: _controller.forYouTracks.length > 5
+            ? 5
+            : _controller.forYouTracks.length,
         itemBuilder: (_, i) {
           final track = _controller.forYouTracks[i];
           return _ForYouCard(
@@ -1593,28 +1608,28 @@ class _TrackPlaceholder extends StatelessWidget {
   }
 }
 
-class _NavIconBtn extends StatelessWidget {
-  const _NavIconBtn({required this.icon, required this.onTap});
-  final IconData icon;
-  final VoidCallback onTap;
+// class _NavIconBtn extends StatelessWidget {
+//   const _NavIconBtn({required this.icon, required this.onTap});
+//   final IconData icon;
+//   final VoidCallback onTap;
 
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 38,
-        height: 38,
-        decoration: BoxDecoration(
-          color: AppColors.bgSurface,
-          shape: BoxShape.circle,
-          border: Border.all(color: AppColors.borderSubtle),
-        ),
-        child: Icon(icon, color: AppColors.textSecondary, size: 20),
-      ),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return GestureDetector(
+//       onTap: onTap,
+//       child: Container(
+//         width: 38,
+//         height: 38,
+//         decoration: BoxDecoration(
+//           color: AppColors.bgSurface,
+//           shape: BoxShape.circle,
+//           border: Border.all(color: AppColors.borderSubtle),
+//         ),
+//         child: Icon(icon, color: AppColors.textSecondary, size: 20),
+//       ),
+//     );
+//   }
+// }
 
 class _TrackMoreButton extends StatelessWidget {
   const _TrackMoreButton({required this.onTap});
