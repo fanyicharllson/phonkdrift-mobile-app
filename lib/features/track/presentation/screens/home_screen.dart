@@ -13,6 +13,8 @@ import '../../../../core/widgets/phonk_toast.dart';
 import '../controllers/track_controller.dart';
 import 'trending_screen.dart';
 import '../../../auth/presentation/screens/login_screen.dart';
+import 'player_screen.dart';
+import 'search_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -158,7 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
             },
             children: [
               _buildHomePage(),
-              _buildSearchPage(),
+              SearchScreen(controller: _controller),
               _buildPlaceholderPage('Community coming soon'),
               _buildPlaceholderPage('Library coming soon'),
               _buildPlaceholderPage('Profile coming soon'),
@@ -205,7 +207,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 seeAllIcon: Icons.trending_up_rounded,
                 onSeeAll: () {
                   Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const TrendingScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => TrendingScreen(controller: _controller),
+                    ),
                   );
                 },
               ),
@@ -233,95 +237,6 @@ class _HomeScreenState extends State<HomeScreen> {
             fontWeight: FontWeight.w600,
             color: AppColors.textSecondary,
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSearchPage() {
-    return Scaffold(
-      backgroundColor: AppColors.bgDeep,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-              child: TextField(
-                controller: _searchCtrl,
-                style: GoogleFonts.inter(
-                  color: AppColors.textPrimary,
-                  fontSize: 14,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'Search tracks, artists, vibes...',
-                  prefixIcon: const Icon(Icons.search_rounded),
-                  suffixIcon: _searchCtrl.text.isEmpty
-                      ? null
-                      : IconButton(
-                          onPressed: () {
-                            _searchCtrl.clear();
-                            _controller.search('');
-                          },
-                          icon: const Icon(Icons.close_rounded),
-                        ),
-                ),
-              ),
-            ),
-            Expanded(
-              child: Builder(
-                builder: (_) {
-                  if (_searchCtrl.text.trim().isEmpty) {
-                    return const _EmptyTile(
-                      message: 'Search tracks to see CDN and streamed results.',
-                      icon: Icons.search_rounded,
-                    );
-                  }
-
-                  if (_controller.searchState == TrackLoadState.loading &&
-                      _controller.searchTracks.isEmpty) {
-                    return ListView.builder(
-                      padding: const EdgeInsets.only(top: 8),
-                      itemCount: 6,
-                      itemBuilder: (_, __) => const _ShimmerListTile(),
-                    );
-                  }
-
-                  if (_controller.searchState == TrackLoadState.error) {
-                    return _SmartErrorTile(
-                      message: _controller.searchError,
-                      onRetry: () => _controller.search(_searchCtrl.text),
-                      onLogin: () => Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (_) => const LoginScreen()),
-                        (_) => false,
-                      ),
-                    );
-                  }
-
-                  if (_controller.searchTracks.isEmpty) {
-                    return const _EmptyTile(
-                      message: 'No tracks found for this search.',
-                      icon: Icons.music_note_rounded,
-                    );
-                  }
-
-                  return ListView.builder(
-                    physics: const BouncingScrollPhysics(),
-                    itemCount: _controller.searchTracks.length,
-                    itemBuilder: (_, i) {
-                      final track = _controller.searchTracks[i];
-                      return _RecentTrackTile(
-                        track: track,
-                        isPlaying:
-                            _controller.nowPlaying?.trackId == track.trackId,
-                        onTap: () => _controller.playTrack(track, context),
-                        onOptionsTap: () => _showTrackOptions(track),
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
         ),
       ),
     );
@@ -432,7 +347,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     border: Border.all(color: AppColors.borderSubtle),
                   ),
                   child: const Icon(
-                    Icons.more_vert_rounded,
+                    Icons.menu_rounded,
                     color: AppColors.textMuted,
                     size: 18,
                   ),
@@ -792,7 +707,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return GestureDetector(
       onTap: () {
-        // TODO: Navigate to full player screen
+        Navigator.of(context).push(
+          PageRouteBuilder(
+            pageBuilder: (_, __, ___) => PlayerScreen(controller: _controller),
+            transitionsBuilder: (_, anim, __, child) => SlideTransition(
+              position:
+                  Tween<Offset>(
+                    begin: const Offset(0, 1),
+                    end: Offset.zero,
+                  ).animate(
+                    CurvedAnimation(parent: anim, curve: Curves.easeOutCubic),
+                  ),
+              child: child,
+            ),
+            transitionDuration: const Duration(milliseconds: 380),
+          ),
+        );
       },
       child: Container(
         margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
