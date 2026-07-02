@@ -126,61 +126,63 @@ class _SearchScreenState extends State<SearchScreen> {
             // Search field
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppColors.bgSurface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: _searchCtrl.text.isNotEmpty
-                        ? AppColors.phonkRed.withValues(alpha: 0.5)
-                        : AppColors.borderSubtle,
-                  ),
+              child: TextField(
+                controller: _searchCtrl,
+                autofocus: false,
+                style: GoogleFonts.inter(
+                  color: AppColors.textPrimary,
+                  fontSize: 15,
                 ),
-                child: TextField(
-                  controller: _searchCtrl,
-                  autofocus: false,
-                  style: GoogleFonts.inter(
-                    color: AppColors.textPrimary,
+                decoration: InputDecoration(
+                  hintText: 'Tracks, artists, vibes...',
+                  hintStyle: GoogleFonts.inter(
+                    color: AppColors.textMuted,
                     fontSize: 15,
                   ),
-                  decoration: InputDecoration(
-                    hintText: 'Tracks, artists, vibes...',
-                    hintStyle: GoogleFonts.inter(
-                      color: AppColors.textMuted,
-                      fontSize: 15,
-                    ),
-                    prefixIcon: const Icon(
-                      Icons.search_rounded,
-                      color: AppColors.textMuted,
-                      size: 22,
-                    ),
-                    suffixIcon: _searchCtrl.text.isNotEmpty
-                        ? GestureDetector(
-                            onTap: () {
-                              _searchCtrl.clear();
-                              widget.controller.search('');
-                              setState(() {});
-                            },
-                            child: const Icon(
-                              Icons.close_rounded,
-                              color: AppColors.textMuted,
-                              size: 20,
-                            ),
-                          )
-                        : null,
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
+                  prefixIcon: const Icon(
+                    Icons.search_rounded,
+                    color: AppColors.textMuted,
+                    size: 22,
+                  ),
+                  suffixIcon: _searchCtrl.text.isNotEmpty
+                      ? GestureDetector(
+                          onTap: () {
+                            _searchCtrl.clear();
+                            widget.controller.search('');
+                            setState(() {});
+                          },
+                          child: const Icon(
+                            Icons.close_rounded,
+                            color: AppColors.textMuted,
+                            size: 20,
+                          ),
+                        )
+                      : null,
+                  filled: true,
+                  fillColor: AppColors.bgSurface,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: AppColors.borderSubtle),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: AppColors.borderSubtle),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(
+                      color: AppColors.phonkRed,
+                      width: 1.5,
                     ),
                   ),
-                  onChanged: _onSearchChanged,
                 ),
+                onChanged: _onSearchChanged,
               ),
             ),
-
             const SizedBox(height: 16),
 
             // Content

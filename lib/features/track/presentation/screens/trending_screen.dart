@@ -17,9 +17,11 @@ class TrendingScreen extends StatefulWidget {
 }
 
 class _TrendingScreenState extends State<TrendingScreen> {
-  List<TrackMetadata> _tracks = [];
+  List<TrackMetadata> _allTracks = [];
+  List<TrackMetadata> _filtered = [];
   bool _isLoading = true;
   String _error = '';
+  final _searchCtrl = TextEditingController();
 
   @override
   void initState() {
@@ -31,6 +33,7 @@ class _TrendingScreenState extends State<TrendingScreen> {
   @override
   void dispose() {
     widget.controller.removeListener(_onControllerUpdate);
+    _searchCtrl.dispose();
     super.dispose();
   }
 
@@ -55,7 +58,8 @@ class _TrendingScreenState extends State<TrendingScreen> {
       final res = await TrackRepository.instance.getForYouTracks(limit: 50);
       if (mounted) {
         setState(() {
-          _tracks = res;
+          _allTracks = res;
+          _filtered = res;
           _isLoading = false;
         });
       }
@@ -67,6 +71,21 @@ class _TrendingScreenState extends State<TrendingScreen> {
         });
       }
     }
+  }
+
+  void _onSearch(String val) {
+    final q = val.trim().toLowerCase();
+    setState(() {
+      _filtered = q.isEmpty
+          ? _allTracks
+          : _allTracks
+                .where(
+                  (t) =>
+                      t.title.toLowerCase().contains(q) ||
+                      t.artistName.toLowerCase().contains(q),
+                )
+                .toList();
+    });
   }
 
   @override
@@ -94,114 +113,97 @@ class _TrendingScreenState extends State<TrendingScreen> {
             ),
           ),
 
-          CustomScrollView(
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              // Premium app bar
-              SliverAppBar(
-                backgroundColor: Colors.transparent,
-                expandedHeight: 160,
-                pinned: true,
-                leading: GestureDetector(
-                  onTap: () => Navigator.of(context).pop(),
-                  child: Container(
-                    margin: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppColors.bgSurface,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.borderSubtle),
-                    ),
-                    child: const Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      color: AppColors.textPrimary,
-                      size: 16,
-                    ),
-                  ),
-                ),
-                flexibleSpace: FlexibleSpaceBar(
-                  collapseMode: CollapseMode.parallax,
-                  background: Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 80, 24, 0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+          SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── Fixed header — no SliverAppBar ────────────────────────
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.of(context).pop(),
+                        child: Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: AppColors.bgSurface,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: AppColors.borderSubtle),
+                          ),
+                          child: const Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            color: AppColors.textPrimary,
+                            size: 16,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.phonkRed.withValues(
-                                  alpha: 0.15,
-                                ),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: AppColors.phonkRed.withValues(
-                                    alpha: 0.3,
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3,
                                   ),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.trending_up_rounded,
-                                    color: AppColors.phonkRed,
-                                    size: 14,
-                                  ),
-                                  const SizedBox(width: 5),
-                                  Text(
-                                    'LIVE',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w800,
-                                      color: AppColors.phonkRed,
-                                      letterSpacing: 1,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.phonkRed.withValues(
+                                      alpha: 0.15,
+                                    ),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: AppColors.phonkRed.withValues(
+                                        alpha: 0.3,
+                                      ),
                                     ),
                                   ),
-                                ],
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.trending_up_rounded,
+                                        color: AppColors.phonkRed,
+                                        size: 12,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'LIVE',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.w800,
+                                          color: AppColors.phonkRed,
+                                          letterSpacing: 1,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Trending Phonk',
+                              style: GoogleFonts.inter(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w900,
+                                color: AppColors.textPrimary,
+                                letterSpacing: -0.8,
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Trending\nPhonk',
-                          style: GoogleFonts.inter(
-                            fontSize: 34,
-                            fontWeight: FontWeight.w900,
-                            color: AppColors.textPrimary,
-                            letterSpacing: -1.2,
-                            height: 1.05,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  title: Text(
-                    'Trending Phonk',
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  titlePadding: const EdgeInsets.only(left: 56, bottom: 16),
-                ),
-              ),
-
-              // Track count pill
-              if (!_isLoading && _tracks.isNotEmpty)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-                    child: Row(
-                      children: [
+                      ),
+                      // Track count badge
+                      if (!_isLoading && _allTracks.isNotEmpty)
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
+                            horizontal: 10,
+                            vertical: 5,
                           ),
                           decoration: BoxDecoration(
                             color: AppColors.bgSurface,
@@ -209,83 +211,165 @@ class _TrendingScreenState extends State<TrendingScreen> {
                             border: Border.all(color: AppColors.borderSubtle),
                           ),
                           child: Text(
-                            '${_tracks.length} tracks',
+                            '${_allTracks.length}',
                             style: GoogleFonts.inter(
                               fontSize: 12,
                               color: AppColors.textSecondary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-              // Content
-              if (_isLoading)
-                SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (_, __) => const _ShimmerTile(),
-                    childCount: 10,
-                  ),
-                )
-              else if (_error.isNotEmpty)
-                SliverFillRemaining(
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.wifi_off_rounded,
-                          color: AppColors.textMuted,
-                          size: 40,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Could not load trending tracks.',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        GestureDetector(
-                          onTap: _load,
-                          child: Text(
-                            'Retry',
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              color: AppColors.phonkRed,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                )
-              else
-                SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (_, i) => _TrendingTile(
-                      rank: i + 1,
-                      track: _tracks[i],
-                      isPlaying:
-                          widget.controller.nowPlaying?.trackId ==
-                          _tracks[i].trackId,
-                      isLiked: widget.controller.isLiked(_tracks[i].trackId),
-                      onTap: () =>
-                          widget.controller.playTrack(_tracks[i], context),
-                      onLike: () =>
-                          widget.controller.toggleLike(_tracks[i].trackId),
-                    ),
-                    childCount: _tracks.length,
+                    ],
                   ),
                 ),
 
-              const SliverToBoxAdapter(child: SizedBox(height: 160)),
-            ],
+                const SizedBox(height: 14),
+
+                // ── Search bar ─────────────────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: TextField(
+                    controller: _searchCtrl,
+                    style: GoogleFonts.inter(
+                      color: AppColors.textPrimary,
+                      fontSize: 14,
+                    ),
+                    onChanged: _onSearch,
+                    decoration: InputDecoration(
+                      hintText: 'Filter trending tracks...',
+                      hintStyle: GoogleFonts.inter(
+                        color: AppColors.textMuted,
+                        fontSize: 14,
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.search_rounded,
+                        color: AppColors.textMuted,
+                        size: 20,
+                      ),
+                      suffixIcon: _searchCtrl.text.isNotEmpty
+                          ? GestureDetector(
+                              onTap: () {
+                                _searchCtrl.clear();
+                                _onSearch('');
+                              },
+                              child: const Icon(
+                                Icons.close_rounded,
+                                color: AppColors.textMuted,
+                                size: 18,
+                              ),
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: AppColors.bgSurface,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(
+                          color: AppColors.borderSubtle,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(
+                          color: AppColors.borderSubtle,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(
+                          color: AppColors.phonkRed,
+                          width: 1.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // ── Track list ─────────────────────────────────────────────
+                Expanded(
+                  child: _isLoading
+                      ? ListView.builder(
+                          itemCount: 10,
+                          itemBuilder: (_, __) => const _ShimmerTile(),
+                        )
+                      : _error.isNotEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.wifi_off_rounded,
+                                color: AppColors.textMuted,
+                                size: 40,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Could not load trending tracks.',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              GestureDetector(
+                                onTap: _load,
+                                child: Text(
+                                  'Retry',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    color: AppColors.phonkRed,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : _filtered.isEmpty
+                      ? Center(
+                          child: Text(
+                            'No tracks match "${_searchCtrl.text}"',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        )
+                      : RefreshIndicator(
+                          color: AppColors.phonkRed,
+                          backgroundColor: AppColors.bgSurface,
+                          onRefresh: _load,
+                          child: ListView.builder(
+                            physics: const BouncingScrollPhysics(),
+                            padding: const EdgeInsets.only(bottom: 160),
+                            itemCount: _filtered.length,
+                            itemBuilder: (_, i) => _TrendingTile(
+                              rank: _allTracks.indexOf(_filtered[i]) + 1,
+                              track: _filtered[i],
+                              isPlaying:
+                                  widget.controller.nowPlaying?.trackId ==
+                                  _filtered[i].trackId,
+                              isLiked: widget.controller.isLiked(
+                                _filtered[i].trackId,
+                              ),
+                              onTap: () => widget.controller.playTrack(
+                                _filtered[i],
+                                context,
+                              ),
+                              onLike: () => widget.controller.toggleLike(
+                                _filtered[i].trackId,
+                              ),
+                            ),
+                          ),
+                        ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
