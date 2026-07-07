@@ -2205,6 +2205,98 @@ class GetUserStatusResponse extends $pb.GeneratedMessage {
   void clearPhonkLevel() => $_clearField(4);
 }
 
+class GetUserCountRequest extends $pb.GeneratedMessage {
+  factory GetUserCountRequest() => create();
+
+  GetUserCountRequest._();
+
+  factory GetUserCountRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory GetUserCountRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'GetUserCountRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'auth'),
+      createEmptyInstance: create)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetUserCountRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetUserCountRequest copyWith(void Function(GetUserCountRequest) updates) =>
+      super.copyWith((message) => updates(message as GetUserCountRequest))
+          as GetUserCountRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static GetUserCountRequest create() => GetUserCountRequest._();
+  @$core.override
+  GetUserCountRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static GetUserCountRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<GetUserCountRequest>(create);
+  static GetUserCountRequest? _defaultInstance;
+}
+
+class GetUserCountResponse extends $pb.GeneratedMessage {
+  factory GetUserCountResponse({
+    $core.int? totalUsers,
+  }) {
+    final result = create();
+    if (totalUsers != null) result.totalUsers = totalUsers;
+    return result;
+  }
+
+  GetUserCountResponse._();
+
+  factory GetUserCountResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory GetUserCountResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'GetUserCountResponse',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'auth'),
+      createEmptyInstance: create)
+    ..aI(1, _omitFieldNames ? '' : 'totalUsers')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetUserCountResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetUserCountResponse copyWith(void Function(GetUserCountResponse) updates) =>
+      super.copyWith((message) => updates(message as GetUserCountResponse))
+          as GetUserCountResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static GetUserCountResponse create() => GetUserCountResponse._();
+  @$core.override
+  GetUserCountResponse createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static GetUserCountResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<GetUserCountResponse>(create);
+  static GetUserCountResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.int get totalUsers => $_getIZ(0);
+  @$pb.TagNumber(1)
+  set totalUsers($core.int value) => $_setSignedInt32(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasTotalUsers() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearTotalUsers() => $_clearField(1);
+}
+
 const $core.bool _omitFieldNames =
     $core.bool.fromEnvironment('protobuf.omit_field_names');
 const $core.bool _omitMessageNames =

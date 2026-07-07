@@ -7,6 +7,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/network/generated/track.pb.dart';
 import '../../../../core/widgets/phonk_toast.dart';
 import '../controllers/track_controller.dart';
+import '../widgets/add_to_playlist_sheet.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key, required this.controller});
@@ -77,6 +78,16 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
+  void _toggleLike(TrackMetadata track) {
+    final willLike = !widget.controller.isLiked(track.trackId);
+    widget.controller.toggleLike(track.trackId);
+    PhonkToast.show(
+      context,
+      message: willLike ? 'Added to Liked Songs' : 'Removed from Liked Songs',
+      type: ToastType.success,
+    );
+  }
+
   void _showOptions(TrackMetadata track) {
     showModalBottomSheet(
       context: context,
@@ -90,7 +101,11 @@ class _SearchScreenState extends State<SearchScreen> {
         },
         onLike: () {
           Navigator.pop(context);
-          widget.controller.toggleLike(track.trackId);
+          _toggleLike(track);
+        },
+        onAddToPlaylist: () {
+          Navigator.pop(context);
+          showAddToPlaylistSheet(context, track: track);
         },
         onYouTube: () {
           Navigator.pop(context);
@@ -410,7 +425,7 @@ class _SearchScreenState extends State<SearchScreen> {
           isPlaying: widget.controller.nowPlaying?.trackId == track.trackId,
           isLiked: widget.controller.isLiked(track.trackId),
           onTap: () => widget.controller.playTrack(track, context),
-          onLike: () => widget.controller.toggleLike(track.trackId),
+          onLike: () => _toggleLike(track),
           onOptions: () => _showOptions(track),
         );
       },
@@ -578,6 +593,7 @@ class _TrackOptionsSheet extends StatelessWidget {
     required this.track,
     required this.onPlay,
     required this.onLike,
+    required this.onAddToPlaylist,
     required this.onYouTube,
     this.isLiked = false,
   });
@@ -585,6 +601,7 @@ class _TrackOptionsSheet extends StatelessWidget {
   final TrackMetadata track;
   final VoidCallback onPlay;
   final VoidCallback onLike;
+  final VoidCallback onAddToPlaylist;
   final VoidCallback onYouTube;
   final bool isLiked;
 
@@ -692,6 +709,21 @@ class _TrackOptionsSheet extends StatelessWidget {
                 ),
               ),
               onTap: onLike,
+            ),
+            ListTile(
+              leading: const Icon(
+                Icons.playlist_add_rounded,
+                color: AppColors.textSecondary,
+              ),
+              title: Text(
+                'Add to Playlist',
+                style: GoogleFonts.inter(
+                  fontSize: 15,
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              onTap: onAddToPlaylist,
             ),
             if (track.originalYoutubeId.isNotEmpty)
               ListTile(

@@ -139,6 +139,14 @@ class AuthServiceClient extends $grpc.Client {
     return $createUnaryCall(_$getUserStatus, request, options: options);
   }
 
+  /// Admin stats
+  $grpc.ResponseFuture<$0.GetUserCountResponse> getUserCount(
+    $0.GetUserCountRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$getUserCount, request, options: options);
+  }
+
   // method descriptors
 
   static final _$registerUser =
@@ -216,6 +224,11 @@ class AuthServiceClient extends $grpc.Client {
           '/auth.AuthService/GetUserStatus',
           ($0.GetUserStatusRequest value) => value.writeToBuffer(),
           $0.GetUserStatusResponse.fromBuffer);
+  static final _$getUserCount =
+      $grpc.ClientMethod<$0.GetUserCountRequest, $0.GetUserCountResponse>(
+          '/auth.AuthService/GetUserCount',
+          ($0.GetUserCountRequest value) => value.writeToBuffer(),
+          $0.GetUserCountResponse.fromBuffer);
 }
 
 @$pb.GrpcServiceName('auth.AuthService')
@@ -344,6 +357,15 @@ abstract class AuthServiceBase extends $grpc.Service {
             ($core.List<$core.int> value) =>
                 $0.GetUserStatusRequest.fromBuffer(value),
             ($0.GetUserStatusResponse value) => value.writeToBuffer()));
+    $addMethod(
+        $grpc.ServiceMethod<$0.GetUserCountRequest, $0.GetUserCountResponse>(
+            'GetUserCount',
+            getUserCount_Pre,
+            false,
+            false,
+            ($core.List<$core.int> value) =>
+                $0.GetUserCountRequest.fromBuffer(value),
+            ($0.GetUserCountResponse value) => value.writeToBuffer()));
   }
 
   $async.Future<$0.RegisterResponse> registerUser_Pre($grpc.ServiceCall $call,
@@ -473,4 +495,13 @@ abstract class AuthServiceBase extends $grpc.Service {
 
   $async.Future<$0.GetUserStatusResponse> getUserStatus(
       $grpc.ServiceCall call, $0.GetUserStatusRequest request);
+
+  $async.Future<$0.GetUserCountResponse> getUserCount_Pre(
+      $grpc.ServiceCall $call,
+      $async.Future<$0.GetUserCountRequest> $request) async {
+    return getUserCount($call, await $request);
+  }
+
+  $async.Future<$0.GetUserCountResponse> getUserCount(
+      $grpc.ServiceCall call, $0.GetUserCountRequest request);
 }

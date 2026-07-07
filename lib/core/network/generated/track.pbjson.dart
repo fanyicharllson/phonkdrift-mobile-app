@@ -284,13 +284,15 @@ const PlaylistResponse$json = {
     {'1': 'playlist_id', '3': 1, '4': 1, '5': 9, '10': 'playlistId'},
     {'1': 'name', '3': 2, '4': 1, '5': 9, '10': 'name'},
     {'1': 'user_id', '3': 3, '4': 1, '5': 9, '10': 'userId'},
+    {'1': 'cover_image_url', '3': 4, '4': 1, '5': 9, '10': 'coverImageUrl'},
   ],
 };
 
 /// Descriptor for `PlaylistResponse`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List playlistResponseDescriptor = $convert.base64Decode(
     'ChBQbGF5bGlzdFJlc3BvbnNlEh8KC3BsYXlsaXN0X2lkGAEgASgJUgpwbGF5bGlzdElkEhIKBG'
-    '5hbWUYAiABKAlSBG5hbWUSFwoHdXNlcl9pZBgDIAEoCVIGdXNlcklk');
+    '5hbWUYAiABKAlSBG5hbWUSFwoHdXNlcl9pZBgDIAEoCVIGdXNlcklkEiYKD2NvdmVyX2ltYWdl'
+    'X3VybBgEIAEoCVINY292ZXJJbWFnZVVybA==');
 
 @$core.Deprecated('Use playlistTrackRequestDescriptor instead')
 const PlaylistTrackRequest$json = {
@@ -298,13 +300,14 @@ const PlaylistTrackRequest$json = {
   '2': [
     {'1': 'playlist_id', '3': 1, '4': 1, '5': 9, '10': 'playlistId'},
     {'1': 'track_id', '3': 2, '4': 1, '5': 9, '10': 'trackId'},
+    {'1': 'user_id', '3': 3, '4': 1, '5': 9, '10': 'userId'},
   ],
 };
 
 /// Descriptor for `PlaylistTrackRequest`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List playlistTrackRequestDescriptor = $convert.base64Decode(
     'ChRQbGF5bGlzdFRyYWNrUmVxdWVzdBIfCgtwbGF5bGlzdF9pZBgBIAEoCVIKcGxheWxpc3RJZB'
-    'IZCgh0cmFja19pZBgCIAEoCVIHdHJhY2tJZA==');
+    'IZCgh0cmFja19pZBgCIAEoCVIHdHJhY2tJZBIXCgd1c2VyX2lkGAMgASgJUgZ1c2VySWQ=');
 
 @$core.Deprecated('Use playlistActionResponseDescriptor instead')
 const PlaylistActionResponse$json = {
@@ -320,6 +323,100 @@ final $typed_data.Uint8List playlistActionResponseDescriptor =
     $convert.base64Decode(
         'ChZQbGF5bGlzdEFjdGlvblJlc3BvbnNlEhgKB3N1Y2Nlc3MYASABKAhSB3N1Y2Nlc3MSGAoHbW'
         'Vzc2FnZRgCIAEoCVIHbWVzc2FnZQ==');
+
+@$core.Deprecated('Use getPlaylistRequestDescriptor instead')
+const GetPlaylistRequest$json = {
+  '1': 'GetPlaylistRequest',
+  '2': [
+    {'1': 'playlist_id', '3': 1, '4': 1, '5': 9, '10': 'playlistId'},
+    {'1': 'user_id', '3': 2, '4': 1, '5': 9, '10': 'userId'},
+  ],
+};
+
+/// Descriptor for `GetPlaylistRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List getPlaylistRequestDescriptor = $convert.base64Decode(
+    'ChJHZXRQbGF5bGlzdFJlcXVlc3QSHwoLcGxheWxpc3RfaWQYASABKAlSCnBsYXlsaXN0SWQSFw'
+    'oHdXNlcl9pZBgCIAEoCVIGdXNlcklk');
+
+@$core.Deprecated('Use getPlaylistResponseDescriptor instead')
+const GetPlaylistResponse$json = {
+  '1': 'GetPlaylistResponse',
+  '2': [
+    {'1': 'playlist_id', '3': 1, '4': 1, '5': 9, '10': 'playlistId'},
+    {'1': 'name', '3': 2, '4': 1, '5': 9, '10': 'name'},
+    {'1': 'user_id', '3': 3, '4': 1, '5': 9, '10': 'userId'},
+    {'1': 'cover_image_url', '3': 4, '4': 1, '5': 9, '10': 'coverImageUrl'},
+    {'1': 'is_private', '3': 5, '4': 1, '5': 8, '10': 'isPrivate'},
+    {
+      '1': 'tracks',
+      '3': 6,
+      '4': 3,
+      '5': 11,
+      '6': '.track.TrackMetadata',
+      '10': 'tracks'
+    },
+  ],
+};
+
+/// Descriptor for `GetPlaylistResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List getPlaylistResponseDescriptor = $convert.base64Decode(
+    'ChNHZXRQbGF5bGlzdFJlc3BvbnNlEh8KC3BsYXlsaXN0X2lkGAEgASgJUgpwbGF5bGlzdElkEh'
+    'IKBG5hbWUYAiABKAlSBG5hbWUSFwoHdXNlcl9pZBgDIAEoCVIGdXNlcklkEiYKD2NvdmVyX2lt'
+    'YWdlX3VybBgEIAEoCVINY292ZXJJbWFnZVVybBIdCgppc19wcml2YXRlGAUgASgIUglpc1ByaX'
+    'ZhdGUSLAoGdHJhY2tzGAYgAygLMhQudHJhY2suVHJhY2tNZXRhZGF0YVIGdHJhY2tz');
+
+@$core.Deprecated('Use getUserPlaylistsRequestDescriptor instead')
+const GetUserPlaylistsRequest$json = {
+  '1': 'GetUserPlaylistsRequest',
+  '2': [
+    {'1': 'user_id', '3': 1, '4': 1, '5': 9, '10': 'userId'},
+  ],
+};
+
+/// Descriptor for `GetUserPlaylistsRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List getUserPlaylistsRequestDescriptor =
+    $convert.base64Decode(
+        'ChdHZXRVc2VyUGxheWxpc3RzUmVxdWVzdBIXCgd1c2VyX2lkGAEgASgJUgZ1c2VySWQ=');
+
+@$core.Deprecated('Use playlistSummaryDescriptor instead')
+const PlaylistSummary$json = {
+  '1': 'PlaylistSummary',
+  '2': [
+    {'1': 'playlist_id', '3': 1, '4': 1, '5': 9, '10': 'playlistId'},
+    {'1': 'name', '3': 2, '4': 1, '5': 9, '10': 'name'},
+    {'1': 'cover_image_url', '3': 3, '4': 1, '5': 9, '10': 'coverImageUrl'},
+    {'1': 'is_private', '3': 4, '4': 1, '5': 8, '10': 'isPrivate'},
+    {'1': 'track_count', '3': 5, '4': 1, '5': 5, '10': 'trackCount'},
+  ],
+};
+
+/// Descriptor for `PlaylistSummary`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List playlistSummaryDescriptor = $convert.base64Decode(
+    'Cg9QbGF5bGlzdFN1bW1hcnkSHwoLcGxheWxpc3RfaWQYASABKAlSCnBsYXlsaXN0SWQSEgoEbm'
+    'FtZRgCIAEoCVIEbmFtZRImCg9jb3Zlcl9pbWFnZV91cmwYAyABKAlSDWNvdmVySW1hZ2VVcmwS'
+    'HQoKaXNfcHJpdmF0ZRgEIAEoCFIJaXNQcml2YXRlEh8KC3RyYWNrX2NvdW50GAUgASgFUgp0cm'
+    'Fja0NvdW50');
+
+@$core.Deprecated('Use getUserPlaylistsResponseDescriptor instead')
+const GetUserPlaylistsResponse$json = {
+  '1': 'GetUserPlaylistsResponse',
+  '2': [
+    {
+      '1': 'playlists',
+      '3': 1,
+      '4': 3,
+      '5': 11,
+      '6': '.track.PlaylistSummary',
+      '10': 'playlists'
+    },
+  ],
+};
+
+/// Descriptor for `GetUserPlaylistsResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List getUserPlaylistsResponseDescriptor =
+    $convert.base64Decode(
+        'ChhHZXRVc2VyUGxheWxpc3RzUmVzcG9uc2USNAoJcGxheWxpc3RzGAEgAygLMhYudHJhY2suUG'
+        'xheWxpc3RTdW1tYXJ5UglwbGF5bGlzdHM=');
 
 @$core.Deprecated('Use forYouRequestDescriptor instead')
 const ForYouRequest$json = {
@@ -483,3 +580,40 @@ final $typed_data.Uint8List adminStatsResponseDescriptor = $convert.base64Decode
     'ChJBZG1pblN0YXRzUmVzcG9uc2USIQoMdG90YWxfdHJhY2tzGAEgASgFUgt0b3RhbFRyYWNrcx'
     'IfCgt0b3RhbF9wbGF5cxgCIAEoBVIKdG90YWxQbGF5cxIlCg5wZW5kaW5nX3RyYWNrcxgDIAEo'
     'BVINcGVuZGluZ1RyYWNrcxIfCgt0b3RhbF91c2VycxgEIAEoBVIKdG90YWxVc2Vycw==');
+
+@$core.Deprecated('Use getLikedTracksRequestDescriptor instead')
+const GetLikedTracksRequest$json = {
+  '1': 'GetLikedTracksRequest',
+  '2': [
+    {'1': 'user_id', '3': 1, '4': 1, '5': 9, '10': 'userId'},
+    {'1': 'limit', '3': 2, '4': 1, '5': 5, '10': 'limit'},
+    {'1': 'page', '3': 3, '4': 1, '5': 5, '10': 'page'},
+  ],
+};
+
+/// Descriptor for `GetLikedTracksRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List getLikedTracksRequestDescriptor = $convert.base64Decode(
+    'ChVHZXRMaWtlZFRyYWNrc1JlcXVlc3QSFwoHdXNlcl9pZBgBIAEoCVIGdXNlcklkEhQKBWxpbW'
+    'l0GAIgASgFUgVsaW1pdBISCgRwYWdlGAMgASgFUgRwYWdl');
+
+@$core.Deprecated('Use getLikedTracksResponseDescriptor instead')
+const GetLikedTracksResponse$json = {
+  '1': 'GetLikedTracksResponse',
+  '2': [
+    {
+      '1': 'tracks',
+      '3': 1,
+      '4': 3,
+      '5': 11,
+      '6': '.track.TrackMetadata',
+      '10': 'tracks'
+    },
+    {'1': 'total', '3': 2, '4': 1, '5': 5, '10': 'total'},
+  ],
+};
+
+/// Descriptor for `GetLikedTracksResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List getLikedTracksResponseDescriptor =
+    $convert.base64Decode(
+        'ChZHZXRMaWtlZFRyYWNrc1Jlc3BvbnNlEiwKBnRyYWNrcxgBIAMoCzIULnRyYWNrLlRyYWNrTW'
+        'V0YWRhdGFSBnRyYWNrcxIUCgV0b3RhbBgCIAEoBVIFdG90YWw=');

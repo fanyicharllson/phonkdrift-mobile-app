@@ -98,6 +98,20 @@ class TrackServiceClient extends $grpc.Client {
     return $createUnaryCall(_$addToPlaylist, request, options: options);
   }
 
+  $grpc.ResponseFuture<$0.GetPlaylistResponse> getPlaylist(
+    $0.GetPlaylistRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$getPlaylist, request, options: options);
+  }
+
+  $grpc.ResponseFuture<$0.GetUserPlaylistsResponse> getUserPlaylists(
+    $0.GetUserPlaylistsRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$getUserPlaylists, request, options: options);
+  }
+
   /// — Admin operations
   $grpc.ResponseFuture<$0.SeedTrackResponse> seedTrack(
     $0.SeedTrackRequest request, {
@@ -148,6 +162,14 @@ class TrackServiceClient extends $grpc.Client {
     return $createUnaryCall(_$getAdminStats, request, options: options);
   }
 
+  /// — User liked tracks
+  $grpc.ResponseFuture<$0.GetLikedTracksResponse> getLikedTracks(
+    $0.GetLikedTracksRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$getLikedTracks, request, options: options);
+  }
+
   // method descriptors
 
   static final _$searchTrack =
@@ -195,6 +217,16 @@ class TrackServiceClient extends $grpc.Client {
           '/track.TrackService/AddToPlaylist',
           ($0.PlaylistTrackRequest value) => value.writeToBuffer(),
           $0.PlaylistActionResponse.fromBuffer);
+  static final _$getPlaylist =
+      $grpc.ClientMethod<$0.GetPlaylistRequest, $0.GetPlaylistResponse>(
+          '/track.TrackService/GetPlaylist',
+          ($0.GetPlaylistRequest value) => value.writeToBuffer(),
+          $0.GetPlaylistResponse.fromBuffer);
+  static final _$getUserPlaylists = $grpc.ClientMethod<
+          $0.GetUserPlaylistsRequest, $0.GetUserPlaylistsResponse>(
+      '/track.TrackService/GetUserPlaylists',
+      ($0.GetUserPlaylistsRequest value) => value.writeToBuffer(),
+      $0.GetUserPlaylistsResponse.fromBuffer);
   static final _$seedTrack =
       $grpc.ClientMethod<$0.SeedTrackRequest, $0.SeedTrackResponse>(
           '/track.TrackService/SeedTrack',
@@ -230,6 +262,11 @@ class TrackServiceClient extends $grpc.Client {
           '/track.TrackService/GetAdminStats',
           ($0.Empty value) => value.writeToBuffer(),
           $0.AdminStatsResponse.fromBuffer);
+  static final _$getLikedTracks =
+      $grpc.ClientMethod<$0.GetLikedTracksRequest, $0.GetLikedTracksResponse>(
+          '/track.TrackService/GetLikedTracks',
+          ($0.GetLikedTracksRequest value) => value.writeToBuffer(),
+          $0.GetLikedTracksResponse.fromBuffer);
 }
 
 @$pb.GrpcServiceName('track.TrackService')
@@ -310,6 +347,24 @@ abstract class TrackServiceBase extends $grpc.Service {
             ($core.List<$core.int> value) =>
                 $0.PlaylistTrackRequest.fromBuffer(value),
             ($0.PlaylistActionResponse value) => value.writeToBuffer()));
+    $addMethod(
+        $grpc.ServiceMethod<$0.GetPlaylistRequest, $0.GetPlaylistResponse>(
+            'GetPlaylist',
+            getPlaylist_Pre,
+            false,
+            false,
+            ($core.List<$core.int> value) =>
+                $0.GetPlaylistRequest.fromBuffer(value),
+            ($0.GetPlaylistResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.GetUserPlaylistsRequest,
+            $0.GetUserPlaylistsResponse>(
+        'GetUserPlaylists',
+        getUserPlaylists_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) =>
+            $0.GetUserPlaylistsRequest.fromBuffer(value),
+        ($0.GetUserPlaylistsResponse value) => value.writeToBuffer()));
     $addMethod($grpc.ServiceMethod<$0.SeedTrackRequest, $0.SeedTrackResponse>(
         'SeedTrack',
         seedTrack_Pre,
@@ -369,6 +424,15 @@ abstract class TrackServiceBase extends $grpc.Service {
         false,
         ($core.List<$core.int> value) => $0.Empty.fromBuffer(value),
         ($0.AdminStatsResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.GetLikedTracksRequest,
+            $0.GetLikedTracksResponse>(
+        'GetLikedTracks',
+        getLikedTracks_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) =>
+            $0.GetLikedTracksRequest.fromBuffer(value),
+        ($0.GetLikedTracksResponse value) => value.writeToBuffer()));
   }
 
   $async.Future<$0.SearchResponse> searchTrack_Pre(
@@ -448,6 +512,23 @@ abstract class TrackServiceBase extends $grpc.Service {
   $async.Future<$0.PlaylistActionResponse> addToPlaylist(
       $grpc.ServiceCall call, $0.PlaylistTrackRequest request);
 
+  $async.Future<$0.GetPlaylistResponse> getPlaylist_Pre($grpc.ServiceCall $call,
+      $async.Future<$0.GetPlaylistRequest> $request) async {
+    return getPlaylist($call, await $request);
+  }
+
+  $async.Future<$0.GetPlaylistResponse> getPlaylist(
+      $grpc.ServiceCall call, $0.GetPlaylistRequest request);
+
+  $async.Future<$0.GetUserPlaylistsResponse> getUserPlaylists_Pre(
+      $grpc.ServiceCall $call,
+      $async.Future<$0.GetUserPlaylistsRequest> $request) async {
+    return getUserPlaylists($call, await $request);
+  }
+
+  $async.Future<$0.GetUserPlaylistsResponse> getUserPlaylists(
+      $grpc.ServiceCall call, $0.GetUserPlaylistsRequest request);
+
   $async.Future<$0.SeedTrackResponse> seedTrack_Pre($grpc.ServiceCall $call,
       $async.Future<$0.SeedTrackRequest> $request) async {
     return seedTrack($call, await $request);
@@ -506,4 +587,13 @@ abstract class TrackServiceBase extends $grpc.Service {
 
   $async.Future<$0.AdminStatsResponse> getAdminStats(
       $grpc.ServiceCall call, $0.Empty request);
+
+  $async.Future<$0.GetLikedTracksResponse> getLikedTracks_Pre(
+      $grpc.ServiceCall $call,
+      $async.Future<$0.GetLikedTracksRequest> $request) async {
+    return getLikedTracks($call, await $request);
+  }
+
+  $async.Future<$0.GetLikedTracksResponse> getLikedTracks(
+      $grpc.ServiceCall call, $0.GetLikedTracksRequest request);
 }

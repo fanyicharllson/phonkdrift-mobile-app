@@ -463,3 +463,25 @@ final $typed_data.Uint8List getUserStatusResponseDescriptor = $convert.base64Dec
     'ChVHZXRVc2VyU3RhdHVzUmVzcG9uc2USGwoJaXNfYmFubmVkGAEgASgIUghpc0Jhbm5lZBIdCg'
     'piYW5fcmVhc29uGAIgASgJUgliYW5SZWFzb24SGgoIdXNlcm5hbWUYAyABKAlSCHVzZXJuYW1l'
     'Eh8KC3Bob25rX2xldmVsGAQgASgJUgpwaG9ua0xldmVs');
+
+@$core.Deprecated('Use getUserCountRequestDescriptor instead')
+const GetUserCountRequest$json = {
+  '1': 'GetUserCountRequest',
+};
+
+/// Descriptor for `GetUserCountRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List getUserCountRequestDescriptor =
+    $convert.base64Decode('ChNHZXRVc2VyQ291bnRSZXF1ZXN0');
+
+@$core.Deprecated('Use getUserCountResponseDescriptor instead')
+const GetUserCountResponse$json = {
+  '1': 'GetUserCountResponse',
+  '2': [
+    {'1': 'total_users', '3': 1, '4': 1, '5': 5, '10': 'totalUsers'},
+  ],
+};
+
+/// Descriptor for `GetUserCountResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List getUserCountResponseDescriptor = $convert.base64Decode(
+    'ChRHZXRVc2VyQ291bnRSZXNwb25zZRIfCgt0b3RhbF91c2VycxgBIAEoBVIKdG90YWxVc2Vycw'
+    '==');

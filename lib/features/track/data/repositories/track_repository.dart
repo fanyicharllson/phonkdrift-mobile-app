@@ -196,6 +196,54 @@ class TrackRepository {
     }
   }
 
+  // ── Liked tracks ────────────────────────────────────────────────────────────
+  Future<List<TrackMetadata>> getLikedTracks({int page = 1, int limit = 50}) async {
+    try {
+      final userId = await _storage.getUserId() ?? '';
+      if (userId.isEmpty) return [];
+
+      final options = await _authOptions();
+      final res = await _client.track.getLikedTracks(
+        GetLikedTracksRequest(userId: userId, limit: limit, page: page),
+        options: options,
+      );
+      return res.tracks;
+    } on GrpcError catch (e) {
+      throw TrackException(_grpcMessage(e));
+    }
+  }
+
+  // ── User playlists ─────────────────────────────────────────────────────────
+  Future<List<PlaylistSummary>> getUserPlaylists() async {
+    try {
+      final userId = await _storage.getUserId() ?? '';
+      if (userId.isEmpty) return [];
+
+      final options = await _authOptions();
+      final res = await _client.track.getUserPlaylists(
+        GetUserPlaylistsRequest(userId: userId),
+        options: options,
+      );
+      return res.playlists;
+    } on GrpcError catch (e) {
+      throw TrackException(_grpcMessage(e));
+    }
+  }
+
+  // ── Get single playlist (with tracks) ──────────────────────────────────────
+  Future<GetPlaylistResponse> getPlaylist(String playlistId) async {
+    try {
+      final userId = await _storage.getUserId() ?? '';
+      final options = await _authOptions();
+      return await _client.track.getPlaylist(
+        GetPlaylistRequest(playlistId: playlistId, userId: userId),
+        options: options,
+      );
+    } on GrpcError catch (e) {
+      throw TrackException(_grpcMessage(e));
+    }
+  }
+
   // ── Create playlist ────────────────────────────────────────────────────────
   Future<PlaylistResponse> createPlaylist({
     required String name,
@@ -223,9 +271,14 @@ class TrackRepository {
     required String trackId,
   }) async {
     try {
+      final userId = await _storage.getUserId() ?? '';
       final options = await _authOptions();
       final res = await _client.track.addToPlaylist(
-        PlaylistTrackRequest(playlistId: playlistId, trackId: trackId),
+        PlaylistTrackRequest(
+          playlistId: playlistId,
+          trackId: trackId,
+          userId: userId,
+        ),
         options: options,
       );
       return res.success;

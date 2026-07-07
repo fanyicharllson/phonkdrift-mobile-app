@@ -15,6 +15,8 @@ import 'trending_screen.dart';
 import '../../../auth/presentation/screens/login_screen.dart';
 import 'player_screen.dart';
 import 'search_screen.dart';
+import 'library_screen.dart';
+import '../widgets/add_to_playlist_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -162,7 +164,7 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildHomePage(),
               SearchScreen(controller: _controller),
               _buildPlaceholderPage('Community coming soon'),
-              _buildPlaceholderPage('Library coming soon'),
+              LibraryScreen(controller: _controller),
               _buildPlaceholderPage('Profile coming soon'),
             ],
           ),
@@ -650,7 +652,7 @@ class _HomeScreenState extends State<HomeScreen> {
             track: track,
             isPlaying: _controller.nowPlaying?.trackId == track.trackId,
             isLiked: _controller.isLiked(track.trackId),
-            onLike: () => _controller.toggleLike(track.trackId),
+            onLike: () => _toggleLike(track),
             onTap: () => _controller.playTrack(track, context),
             onOptionsTap: () => _showTrackOptions(track),
           );
@@ -988,6 +990,17 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ── Like with toast feedback ───────────────────────────────────────────────
+  void _toggleLike(TrackMetadata track) {
+    final willLike = !_controller.isLiked(track.trackId);
+    _controller.toggleLike(track.trackId);
+    PhonkToast.show(
+      context,
+      message: willLike ? 'Added to Liked Songs' : 'Removed from Liked Songs',
+      type: ToastType.success,
+    );
+  }
+
   // ── Track options bottom sheet ────────────────────────────────────────────
   Future<void> _showTrackOptions(TrackMetadata track) =>
       _openTrackOptions(track);
@@ -1011,6 +1024,24 @@ class _HomeScreenState extends State<HomeScreen> {
                 onTap: () {
                   Navigator.of(sheetCtx).pop();
                   _controller.playTrack(track, context);
+                },
+              ),
+              _TrackOptionTile(
+                icon: _controller.isLiked(track.trackId)
+                    ? Icons.favorite_rounded
+                    : Icons.favorite_border_rounded,
+                label: _controller.isLiked(track.trackId) ? 'Unlike' : 'Like',
+                onTap: () {
+                  Navigator.of(sheetCtx).pop();
+                  _toggleLike(track);
+                },
+              ),
+              _TrackOptionTile(
+                icon: Icons.playlist_add_rounded,
+                label: 'Add to Playlist',
+                onTap: () {
+                  Navigator.of(sheetCtx).pop();
+                  showAddToPlaylistSheet(context, track: track);
                 },
               ),
               if (track.originalYoutubeId.isNotEmpty)
