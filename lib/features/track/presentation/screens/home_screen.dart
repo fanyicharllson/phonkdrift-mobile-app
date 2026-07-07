@@ -25,11 +25,12 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final _controller = TrackController();
   final _pageController = PageController();
   final _searchCtrl = TextEditingController();
   Timer? _searchDebounce;
+  bool _isPlayerScreenOpen = false;
 
   String _phonkLevel = '';
   String _username = '';
@@ -41,9 +42,21 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _controller.addListener(_onControllerUpdate);
     _searchCtrl.addListener(_onSearchChanged);
     _loadData();
+  }
+
+  // Covers reopening the app via the now-playing notification, since Android
+  // gives no way to distinguish that from any other app-resume.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed &&
+        _controller.hasNowPlaying &&
+        !_isPlayerScreenOpen) {
+      _openPlayerScreen();
+    }
   }
 
   void _onSearchChanged() {
@@ -102,6 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _controller.removeListener(_onControllerUpdate);
     _pageController.dispose();
     _searchDebounce?.cancel();
@@ -699,17 +713,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── Mini player ───────────────────────────────────────────────────────────
-  Widget _buildMiniPlayer() {
-    final track = _controller.nowPlaying!;
-    final progress = _controller.duration.inSeconds > 0
-        ? (_controller.position.inSeconds / _controller.duration.inSeconds)
-              .clamp(0.0, 1.0)
-        : 0.0;
-
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
+  // ── Player screen navigation ────────────────────────────────────────────────
+  void _openPlayerScreen() {
+    if (_isPlayerScreenOpen) return;
+    _isPlayerScreenOpen = true;
+    Navigator.of(context)
+        .push(
           PageRouteBuilder(
             pageBuilder: (_, __, ___) => PlayerScreen(controller: _controller),
             transitionsBuilder: (_, anim, __, child) => SlideTransition(
@@ -724,8 +733,20 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             transitionDuration: const Duration(milliseconds: 380),
           ),
-        );
-      },
+        )
+        .then((_) => _isPlayerScreenOpen = false);
+  }
+
+  // ── Mini player ───────────────────────────────────────────────────────────
+  Widget _buildMiniPlayer() {
+    final track = _controller.nowPlaying!;
+    final progress = _controller.duration.inSeconds > 0
+        ? (_controller.position.inSeconds / _controller.duration.inSeconds)
+              .clamp(0.0, 1.0)
+        : 0.0;
+
+    return GestureDetector(
+      onTap: _openPlayerScreen,
       child: Container(
         margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
         decoration: BoxDecoration(

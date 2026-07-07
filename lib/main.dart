@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 import 'core/constants/app_theme.dart';
 import 'core/network/grpc_client.dart';
 import 'core/widgets/account_ban_monitor.dart';
@@ -20,6 +21,14 @@ Future<void> main() async {
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light,
     ),
+  );
+
+  // Now-playing notification (status bar + lock screen controls)
+  await JustAudioBackground.init(
+    androidNotificationChannelId: 'com.phonkdrift.phonkdrift_mobile.audio',
+    androidNotificationChannelName: 'Playback',
+    androidNotificationIcon: 'drawable/ic_notification',
+    androidNotificationOngoing: true,
   );
 
   // Boot gRPC channels

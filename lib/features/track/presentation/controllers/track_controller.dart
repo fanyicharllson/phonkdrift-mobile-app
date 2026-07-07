@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:audio_session/audio_session.dart';
@@ -222,7 +223,20 @@ class TrackController extends ChangeNotifier {
         throw const TrackException('Playback URL is empty.');
       }
 
-      await _player.setAudioSource(AudioSource.uri(Uri.parse(streamUrl)));
+      await _player.setAudioSource(
+        AudioSource.uri(
+          Uri.parse(streamUrl),
+          tag: MediaItem(
+            id: track.trackId,
+            album: 'PhonkDrift',
+            title: track.title,
+            artist: track.artistName,
+            artUri: track.thumbnailUrl.isNotEmpty
+                ? Uri.tryParse(track.thumbnailUrl)
+                : null,
+          ),
+        ),
+      );
       await _player.play();
     } catch (e) {
       _isLoadingStream = false;
