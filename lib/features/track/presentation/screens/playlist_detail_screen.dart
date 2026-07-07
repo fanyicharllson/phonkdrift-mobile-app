@@ -142,13 +142,6 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                   ),
                 ],
               ),
-              title: Text(widget.playlistName,
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                  )),
-              titlePadding: const EdgeInsets.only(left: 56, bottom: 16),
             ),
           ),
 

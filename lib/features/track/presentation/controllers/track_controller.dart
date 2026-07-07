@@ -40,7 +40,7 @@ class TrackController extends ChangeNotifier {
   List<TrackMetadata> _searchTracks = [];
   TrackLoadState _searchState = TrackLoadState.idle;
   String _searchError = '';
-  int _searchPage = 1;
+  int _searchPage = 0;
   String _lastSearchQuery = '';
 
   List<TrackMetadata> get searchTracks => _searchTracks;
@@ -318,14 +318,14 @@ class TrackController extends ChangeNotifier {
       _searchTracks = [];
       _searchState = TrackLoadState.idle;
       _searchError = '';
-      _searchPage = 1;
+      _searchPage = 0;
       _lastSearchQuery = '';
       notifyListeners();
       return;
     }
 
     if (!loadMore || _lastSearchQuery != normalized) {
-      _searchPage = 1;
+      _searchPage = 0;
       _searchTracks = [];
     }
 
@@ -339,7 +339,7 @@ class TrackController extends ChangeNotifier {
         query: normalized,
         page: _searchPage,
       );
-      if (loadMore && _searchPage > 1) {
+      if (loadMore && _searchPage > 0) {
         _searchTracks = [..._searchTracks, ...next];
       } else {
         _searchTracks = next;

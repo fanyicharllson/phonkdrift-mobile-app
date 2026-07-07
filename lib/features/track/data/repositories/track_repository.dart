@@ -56,7 +56,7 @@ class TrackRepository {
   // ── Search tracks ──────────────────────────────────────────────────────────
   Future<List<TrackMetadata>> searchTracks({
     required String query,
-    int page = 1,
+    int page = 0,
   }) async {
     try {
       final options = await _authOptions();
@@ -197,7 +197,7 @@ class TrackRepository {
   }
 
   // ── Liked tracks ────────────────────────────────────────────────────────────
-  Future<List<TrackMetadata>> getLikedTracks({int page = 1, int limit = 50}) async {
+  Future<List<TrackMetadata>> getLikedTracks({int page = 0, int limit = 50}) async {
     try {
       final userId = await _storage.getUserId() ?? '';
       if (userId.isEmpty) return [];
