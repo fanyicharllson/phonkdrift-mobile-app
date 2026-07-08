@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'core/constants/app_theme.dart';
+import 'core/navigation/app_navigator.dart';
 import 'core/network/grpc_client.dart';
 import 'core/widgets/account_ban_monitor.dart';
 import 'features/auth/presentation/screens/router_screen.dart';
@@ -40,17 +41,14 @@ Future<void> main() async {
 class PhonkDriftApp extends StatelessWidget {
   const PhonkDriftApp({super.key});
 
-  static final GlobalKey<NavigatorState> navigatorKey =
-      GlobalKey<NavigatorState>();
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'PhonkDrift',
       debugShowCheckedModeBanner: false,
-      navigatorKey: navigatorKey,
+      navigatorKey: AppNavigator.key,
       builder: (context, child) => AccountBanMonitor(
-        navigatorKey: navigatorKey,
+        navigatorKey: AppNavigator.key,
         child: child ?? const SizedBox.shrink(),
       ),
       theme: AppTheme.darkTheme,

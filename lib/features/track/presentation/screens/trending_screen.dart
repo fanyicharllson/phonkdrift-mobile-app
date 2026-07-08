@@ -7,6 +7,7 @@ import '../../../../core/network/generated/track.pb.dart';
 import '../../../../core/widgets/phonk_toast.dart';
 import '../../data/repositories/track_repository.dart';
 import '../controllers/track_controller.dart';
+import '../widgets/playing_equalizer.dart';
 
 class TrendingScreen extends StatefulWidget {
   const TrendingScreen({super.key, required this.controller});
@@ -360,6 +361,7 @@ class _TrendingScreenState extends State<TrendingScreen> {
                               onTap: () => widget.controller.playTrack(
                                 _filtered[i],
                                 context,
+                                queue: _filtered,
                               ),
                               onLike: () => widget.controller.toggleLike(
                                 _filtered[i].trackId,
@@ -527,13 +529,13 @@ class _TrendingTile extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Icon(
-                  isPlaying
-                      ? Icons.equalizer_rounded
-                      : Icons.play_circle_outline_rounded,
-                  color: isPlaying ? AppColors.phonkRed : AppColors.textMuted,
-                  size: 22,
-                ),
+                isPlaying
+                    ? const PlayingEqualizer(size: 20)
+                    : const Icon(
+                        Icons.play_circle_outline_rounded,
+                        color: AppColors.textMuted,
+                        size: 22,
+                      ),
               ],
             ),
           ],

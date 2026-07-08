@@ -5,6 +5,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:audio_session/audio_session.dart';
 import '../../../auth/data/repositories/auth_repository.dart';
 import '../../../auth/presentation/screens/banned_screen.dart';
+import '../../../../core/navigation/app_navigator.dart';
 import '../../../../core/network/generated/track.pb.dart';
 import '../../data/repositories/track_repository.dart';
 
@@ -65,6 +66,13 @@ class TrackController extends ChangeNotifier {
   Duration get duration => _duration;
   AudioPlayer get player => _player;
 
+  // ── Queue (drives auto-play-next) ──────────────────────────────────────────
+  List<TrackMetadata> _queue = [];
+  int _queueIndex = -1;
+
+  bool get hasNext => _queueIndex >= 0 && _queueIndex + 1 < _queue.length;
+  bool get hasPrevious => _queueIndex > 0;
+
   TrackController() {
     _initAudioSession();
     _listenToPlayer();
@@ -118,6 +126,13 @@ class TrackController extends ChangeNotifier {
     _player.playerStateStream.listen((state) {
       if (state.processingState == ProcessingState.completed) {
         _onTrackCompleted();
+      } else if (state.processingState == ProcessingState.idle &&
+          _nowPlaying != null &&
+          !_isLoadingStream) {
+        // Source dropped out from under us (e.g. expired/broken stream link)
+        // — don't leave the UI stuck showing a "pause" icon over silence.
+        _isPlaying = false;
+        notifyListeners();
       }
     });
   }
@@ -153,6 +168,10 @@ class TrackController extends ChangeNotifier {
     notifyListeners();
     // Reload recently played after completion
     loadRecentlyPlayed();
+
+    if (hasNext) {
+      playNext();
+    }
   }
 
   // TikTok-style like — instant optimistic toggle
@@ -193,12 +212,24 @@ class TrackController extends ChangeNotifier {
   }
 
   // ── Play track ─────────────────────────────────────────────────────────────
-  Future<void> playTrack(TrackMetadata track, BuildContext context) async {
+  /// [queue] is the list this track was tapped from (ForYou, search results,
+  /// a playlist, ...) — it drives auto-play-next when the track finishes.
+  /// Defaults to a single-track queue when omitted.
+  Future<void> playTrack(
+    TrackMetadata track,
+    BuildContext context, {
+    List<TrackMetadata>? queue,
+  }) async {
     _playError = '';
 
     // If same track — toggle play/pause
     if (_nowPlaying?.trackId == track.trackId) {
-      _isPlaying ? await _player.pause() : await _player.play();
+      if (_isPlaying) {
+        await _player.pause();
+      } else {
+        await _player.play();
+      }
+      _isPlaying = _player.playing;
       notifyListeners();
       return;
     }
@@ -207,8 +238,34 @@ class TrackController extends ChangeNotifier {
     final allowed = await _ensurePlaybackAllowed(context);
     if (!allowed) return;
 
+    final resolvedQueue = queue ?? [track];
+    final idx = resolvedQueue.indexWhere((t) => t.trackId == track.trackId);
+    _queue = resolvedQueue;
+    _queueIndex = idx >= 0 ? idx : 0;
+
+    await _playFromSource(track);
+  }
+
+  Future<void> playNext() async {
+    if (!hasNext) return;
+    final allowed = await _ensurePlaybackAllowed(AppNavigator.context);
+    if (!allowed) return;
+    _queueIndex++;
+    await _playFromSource(_queue[_queueIndex]);
+  }
+
+  Future<void> playPrevious() async {
+    if (!hasPrevious) return;
+    final allowed = await _ensurePlaybackAllowed(AppNavigator.context);
+    if (!allowed) return;
+    _queueIndex--;
+    await _playFromSource(_queue[_queueIndex]);
+  }
+
+  Future<void> _playFromSource(TrackMetadata track) async {
     _nowPlaying = track;
     _isLoadingStream = true;
+    _isPlaying = false;
     _position = Duration.zero;
     _duration = Duration.zero;
     notifyListeners();
@@ -238,15 +295,18 @@ class TrackController extends ChangeNotifier {
         ),
       );
       await _player.play();
+      _isPlaying = _player.playing;
+      notifyListeners();
     } catch (e) {
       _isLoadingStream = false;
+      _isPlaying = false;
       _nowPlaying = null;
       _playError = 'Could not play "${track.title}". Please try again.';
       notifyListeners();
     }
   }
 
-  Future<bool> _ensurePlaybackAllowed(BuildContext context) async {
+  Future<bool> _ensurePlaybackAllowed(BuildContext? context) async {
     try {
       final banStatus = await AuthRepository.instance.checkBanStatus();
       if (!banStatus.isBanned) return true;
@@ -258,7 +318,7 @@ class TrackController extends ChangeNotifier {
       _isLoadingStream = false;
       notifyListeners();
 
-      if (!context.mounted) return false;
+      if (context == null || !context.mounted) return false;
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
           builder: (_) => BannedScreen(reason: banStatus.reason),
@@ -274,7 +334,13 @@ class TrackController extends ChangeNotifier {
 
   // ── Playback controls ──────────────────────────────────────────────────────
   Future<void> togglePlayPause() async {
-    _isPlaying ? await _player.pause() : await _player.play();
+    if (_isPlaying) {
+      await _player.pause();
+    } else {
+      await _player.play();
+    }
+    _isPlaying = _player.playing;
+    notifyListeners();
   }
 
   Future<void> seekTo(Duration position) async {
@@ -288,6 +354,8 @@ class TrackController extends ChangeNotifier {
     _isPlaying = false;
     _position = Duration.zero;
     _duration = Duration.zero;
+    _queue = [];
+    _queueIndex = -1;
     notifyListeners();
   }
 

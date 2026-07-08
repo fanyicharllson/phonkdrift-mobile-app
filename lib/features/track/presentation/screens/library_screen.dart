@@ -7,6 +7,7 @@ import '../../../../core/network/generated/track.pb.dart';
 import '../../../../core/widgets/phonk_toast.dart';
 import '../../data/repositories/track_repository.dart';
 import '../controllers/track_controller.dart';
+import '../widgets/playing_equalizer.dart';
 import 'playlist_detail_screen.dart';
 
 class LibraryScreen extends StatefulWidget {
@@ -131,7 +132,7 @@ class _LibraryScreenState extends State<LibraryScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Header ──────────────────────────────────────────────
+                // â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
                   child: Row(
@@ -149,7 +150,7 @@ class _LibraryScreenState extends State<LibraryScreen>
                                 )),
                             const SizedBox(height: 2),
                             Text(
-                              '${_likedTracks.length} liked · ${_playlists.length} playlists',
+                              '${_likedTracks.length} liked Â· ${_playlists.length} playlists',
                               style: GoogleFonts.inter(
                                 fontSize: 13,
                                 color: AppColors.textMuted,
@@ -184,7 +185,7 @@ class _LibraryScreenState extends State<LibraryScreen>
 
                 const SizedBox(height: 20),
 
-                // ── Stats strip ──────────────────────────────────────────
+                // â”€â”€ Stats strip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Row(
@@ -215,7 +216,7 @@ class _LibraryScreenState extends State<LibraryScreen>
 
                 const SizedBox(height: 20),
 
-                // ── Tabs ────────────────────────────────────────────────
+               
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Container(
@@ -250,8 +251,7 @@ class _LibraryScreenState extends State<LibraryScreen>
                 ),
 
                 const SizedBox(height: 16),
-
-                // ── Tab views ────────────────────────────────────────────
+                
                 Expanded(
                   child: TabBarView(
                     controller: _tabController,
@@ -283,7 +283,6 @@ class _LibraryScreenState extends State<LibraryScreen>
   }
 }
 
-// ── Liked Tracks Tab ────────────────────────────────────────────────────────────
 class _LikedTracksTab extends StatelessWidget {
   const _LikedTracksTab({
     required this.tracks,
@@ -326,7 +325,7 @@ class _LikedTracksTab extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
           child: GestureDetector(
-            onTap: () => controller.playTrack(tracks.first, context),
+            onTap: () => controller.playTrack(tracks.first, context, queue: tracks),
             child: Container(
               height: 48,
               decoration: BoxDecoration(
@@ -372,7 +371,7 @@ class _LikedTracksTab extends StatelessWidget {
               index: i + 1,
               isPlaying: controller.nowPlaying?.trackId == tracks[i].trackId,
               isLiked: true,
-              onTap: () => controller.playTrack(tracks[i], context),
+              onTap: () => controller.playTrack(tracks[i], context, queue: tracks),
               onLike: () => controller.toggleLike(tracks[i].trackId),
             ),
           ),
@@ -382,7 +381,7 @@ class _LikedTracksTab extends StatelessWidget {
   }
 }
 
-// ── Playlists Tab ───────────────────────────────────────────────────────────────
+
 class _PlaylistsTab extends StatelessWidget {
   const _PlaylistsTab({
     required this.playlists,
@@ -462,7 +461,6 @@ class _PlaylistsTab extends StatelessWidget {
   }
 }
 
-// ── Library Track Tile ──────────────────────────────────────────────────────────
 class _LibraryTrackTile extends StatelessWidget {
   const _LibraryTrackTile({
     required this.track,
@@ -504,8 +502,7 @@ class _LibraryTrackTile extends StatelessWidget {
             SizedBox(
               width: 28,
               child: isPlaying
-                  ? const Icon(Icons.equalizer_rounded,
-                      color: AppColors.phonkRed, size: 18)
+                  ? const PlayingEqualizer(size: 18)
                   : Text('$index',
                       textAlign: TextAlign.center,
                       style: GoogleFonts.inter(
@@ -571,7 +568,7 @@ class _LibraryTrackTile extends StatelessWidget {
   }
 }
 
-// ── Playlist Card ───────────────────────────────────────────────────────────────
+
 class _PlaylistCard extends StatelessWidget {
   const _PlaylistCard({required this.playlist, required this.onTap});
   final PlaylistSummary playlist;
@@ -643,7 +640,6 @@ class _PlaylistCard extends StatelessWidget {
   }
 }
 
-// ── Create Playlist Card ─────────────────────────────────────────────────────────
 class _CreatePlaylistCard extends StatelessWidget {
   const _CreatePlaylistCard({required this.onTap});
   final VoidCallback onTap;
@@ -695,7 +691,6 @@ class _CreatePlaylistCard extends StatelessWidget {
   }
 }
 
-// ── Create Playlist Bottom Sheet ─────────────────────────────────────────────────
 class _CreatePlaylistSheet extends StatefulWidget {
   const _CreatePlaylistSheet({required this.controller});
   final TextEditingController controller;
@@ -837,7 +832,6 @@ class _CreatePlaylistSheetState extends State<_CreatePlaylistSheet> {
   }
 }
 
-// ── Shared helpers ──────────────────────────────────────────────────────────────
 class _StatStrip extends StatelessWidget {
   const _StatStrip({
     required this.icon,

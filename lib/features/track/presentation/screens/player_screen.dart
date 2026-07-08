@@ -2,11 +2,14 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/network/generated/track.pb.dart';
 import '../../../../core/widgets/phonk_toast.dart';
 import '../controllers/track_controller.dart';
+import '../widgets/add_to_playlist_sheet.dart';
+import '../widgets/play_pause_button.dart';
 
 class PlayerScreen extends StatefulWidget {
   const PlayerScreen({super.key, required this.controller});
@@ -17,8 +20,9 @@ class PlayerScreen extends StatefulWidget {
 }
 
 class _PlayerScreenState extends State<PlayerScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _rotateController;
+  late AnimationController _pulseController;
 
   @override
   void initState() {
@@ -29,9 +33,14 @@ class _PlayerScreenState extends State<PlayerScreen>
       vsync: this,
       duration: const Duration(seconds: 12),
     );
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    );
 
     if (widget.controller.isPlaying) {
       _rotateController.repeat();
+      _pulseController.repeat(reverse: true);
     }
   }
 
@@ -39,6 +48,7 @@ class _PlayerScreenState extends State<PlayerScreen>
   void dispose() {
     widget.controller.removeListener(_onUpdate);
     _rotateController.dispose();
+    _pulseController.dispose();
     super.dispose();
   }
 
@@ -47,8 +57,10 @@ class _PlayerScreenState extends State<PlayerScreen>
     setState(() {});
     if (widget.controller.isPlaying && !_rotateController.isAnimating) {
       _rotateController.repeat();
+      _pulseController.repeat(reverse: true);
     } else if (!widget.controller.isPlaying) {
       _rotateController.stop();
+      _pulseController.stop();
     }
     if (widget.controller.playError.isNotEmpty) {
       PhonkToast.show(
@@ -73,6 +85,72 @@ class _PlayerScreenState extends State<PlayerScreen>
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
+  }
+
+  Future<void> _openTrackOptions(TrackMetadata track, bool isLiked) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.bgSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetCtx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _PlayerOptionTile(
+                icon: isLiked
+                    ? Icons.favorite_rounded
+                    : Icons.favorite_border_rounded,
+                label: isLiked ? 'Unlike' : 'Like',
+                onTap: () {
+                  Navigator.of(sheetCtx).pop();
+                  HapticFeedback.mediumImpact();
+                  widget.controller.toggleLike(track.trackId);
+                },
+              ),
+              _PlayerOptionTile(
+                icon: Icons.playlist_add_rounded,
+                label: 'Add to Playlist',
+                onTap: () {
+                  Navigator.of(sheetCtx).pop();
+                  showAddToPlaylistSheet(context, track: track);
+                },
+              ),
+              _PlayerOptionTile(
+                icon: Icons.share_rounded,
+                label: 'Share',
+                onTap: () {
+                  Navigator.of(sheetCtx).pop();
+                  final youtubeUrl = track.originalYoutubeId.isNotEmpty
+                      ? '\nhttps://www.youtube.com/watch?v=${track.originalYoutubeId}'
+                      : '';
+                  Share.share(
+                    '${track.title} by ${track.artistName}$youtubeUrl',
+                  );
+                },
+              ),
+              if (track.originalYoutubeId.isNotEmpty)
+                _PlayerOptionTile(
+                  icon: Icons.open_in_new_rounded,
+                  label: 'Open in YouTube',
+                  onTap: () {
+                    Navigator.of(sheetCtx).pop();
+                    _openYouTube(track);
+                  },
+                ),
+              _PlayerOptionTile(
+                icon: Icons.close_rounded,
+                label: 'Dismiss',
+                onTap: () => Navigator.of(sheetCtx).pop(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -181,7 +259,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                         ],
                       ),
                       GestureDetector(
-                        onTap: () => _openYouTube(track),
+                        onTap: () => _openTrackOptions(track, isLiked),
                         child: Container(
                           width: 40,
                           height: 40,
@@ -191,9 +269,9 @@ class _PlayerScreenState extends State<PlayerScreen>
                             border: Border.all(color: AppColors.borderSubtle),
                           ),
                           child: const Icon(
-                            Icons.open_in_new_rounded,
+                            Icons.more_vert_rounded,
                             color: AppColors.textMuted,
-                            size: 18,
+                            size: 20,
                           ),
                         ),
                       ),
@@ -203,35 +281,43 @@ class _PlayerScreenState extends State<PlayerScreen>
 
                 const SizedBox(height: 40),
 
-                // Rotating album art
+                // Rotating album art — breathing glow while playing
                 Center(
                   child: AnimatedBuilder(
-                    animation: _rotateController,
-                    builder: (_, child) => Transform.rotate(
-                      angle: _rotateController.value * 2 * 3.14159,
-                      child: child,
-                    ),
-                    child: Container(
-                      width: 240,
-                      height: 240,
+                    animation: _pulseController,
+                    builder: (_, child) => Container(
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
                             color: AppColors.phonkRed.withValues(alpha: 0.3),
-                            blurRadius: 40,
-                            spreadRadius: 5,
+                            blurRadius: 40 + _pulseController.value * 20,
+                            spreadRadius: 5 + _pulseController.value * 6,
                           ),
                         ],
                       ),
-                      child: ClipOval(
-                        child: track.thumbnailUrl.isNotEmpty
-                            ? CachedNetworkImage(
-                                imageUrl: track.thumbnailUrl,
-                                fit: BoxFit.cover,
-                                errorWidget: (_, __, ___) => _ArtPlaceholder(),
-                              )
-                            : _ArtPlaceholder(),
+                      child: child,
+                    ),
+                    child: AnimatedBuilder(
+                      animation: _rotateController,
+                      builder: (_, child) => Transform.rotate(
+                        angle: _rotateController.value * 2 * 3.14159,
+                        child: child,
+                      ),
+                      child: Container(
+                        width: 240,
+                        height: 240,
+                        decoration: const BoxDecoration(shape: BoxShape.circle),
+                        child: ClipOval(
+                          child: track.thumbnailUrl.isNotEmpty
+                              ? CachedNetworkImage(
+                                  imageUrl: track.thumbnailUrl,
+                                  fit: BoxFit.cover,
+                                  errorWidget: (_, __, ___) =>
+                                      _ArtPlaceholder(),
+                                )
+                              : _ArtPlaceholder(),
+                        ),
                       ),
                     ),
                   ),
@@ -377,6 +463,23 @@ class _PlayerScreenState extends State<PlayerScreen>
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
+                      // Previous track
+                      GestureDetector(
+                        onTap: widget.controller.hasPrevious
+                            ? () {
+                                HapticFeedback.lightImpact();
+                                widget.controller.playPrevious();
+                              }
+                            : null,
+                        child: Icon(
+                          Icons.skip_previous_rounded,
+                          color: widget.controller.hasPrevious
+                              ? AppColors.textSecondary
+                              : AppColors.textMuted.withValues(alpha: 0.3),
+                          size: 28,
+                        ),
+                      ),
+
                       // Seek back 10s
                       GestureDetector(
                         onTap: () {
@@ -396,35 +499,14 @@ class _PlayerScreenState extends State<PlayerScreen>
                       ),
 
                       // Play / Pause
-                      GestureDetector(
+                      PlayPauseButton(
+                        isPlaying: widget.controller.isPlaying,
+                        size: 72,
+                        iconSize: 36,
                         onTap: () {
                           HapticFeedback.mediumImpact();
                           widget.controller.togglePlayPause();
                         },
-                        child: Container(
-                          width: 72,
-                          height: 72,
-                          decoration: BoxDecoration(
-                            color: AppColors.phonkRed,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.phonkRed.withValues(
-                                  alpha: 0.4,
-                                ),
-                                blurRadius: 24,
-                                spreadRadius: 2,
-                              ),
-                            ],
-                          ),
-                          child: Icon(
-                            widget.controller.isPlaying
-                                ? Icons.pause_rounded
-                                : Icons.play_arrow_rounded,
-                            color: Colors.white,
-                            size: 36,
-                          ),
-                        ),
                       ),
 
                       // Seek forward 10s
@@ -440,6 +522,23 @@ class _PlayerScreenState extends State<PlayerScreen>
                           Icons.forward_10_rounded,
                           color: AppColors.textSecondary,
                           size: 32,
+                        ),
+                      ),
+
+                      // Next track
+                      GestureDetector(
+                        onTap: widget.controller.hasNext
+                            ? () {
+                                HapticFeedback.lightImpact();
+                                widget.controller.playNext();
+                              }
+                            : null,
+                        child: Icon(
+                          Icons.skip_next_rounded,
+                          color: widget.controller.hasNext
+                              ? AppColors.textSecondary
+                              : AppColors.textMuted.withValues(alpha: 0.3),
+                          size: 28,
                         ),
                       ),
                     ],
@@ -475,6 +574,32 @@ class _PlayerScreenState extends State<PlayerScreen>
           ),
         ],
       ),
+    );
+  }
+}
+
+class _PlayerOptionTile extends StatelessWidget {
+  const _PlayerOptionTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon, color: AppColors.phonkRed),
+      title: Text(
+        label,
+        style: GoogleFonts.inter(
+          color: AppColors.textPrimary,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      onTap: onTap,
     );
   }
 }

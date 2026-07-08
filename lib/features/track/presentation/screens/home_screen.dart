@@ -17,6 +17,8 @@ import 'player_screen.dart';
 import 'search_screen.dart';
 import 'library_screen.dart';
 import '../widgets/add_to_playlist_sheet.dart';
+import '../widgets/play_pause_button.dart';
+import '../widgets/playing_equalizer.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -667,8 +669,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             isPlaying: _controller.nowPlaying?.trackId == track.trackId,
             isLiked: _controller.isLiked(track.trackId),
             onLike: () => _toggleLike(track),
-            onTap: () => _controller.playTrack(track, context),
-            onOptionsTap: () => _showTrackOptions(track),
+            onTap: () => _controller.playTrack(
+              track,
+              context,
+              queue: _controller.forYouTracks,
+            ),
+            onOptionsTap: () =>
+                _showTrackOptions(track, queue: _controller.forYouTracks),
           );
         },
       ),
@@ -702,9 +709,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           isPlaying:
               _controller.nowPlaying?.trackId ==
               _controller.recentTracks[i].trackId,
-          onTap: () =>
-              _controller.playTrack(_controller.recentTracks[i], context),
-          onOptionsTap: () => _openTrackOptions(_controller.recentTracks[i]),
+          onTap: () => _controller.playTrack(
+            _controller.recentTracks[i],
+            context,
+            queue: _controller.recentTracks,
+          ),
+          onOptionsTap: () => _openTrackOptions(
+            _controller.recentTracks[i],
+            queue: _controller.recentTracks,
+          ),
         ),
         childCount: _controller.recentTracks.length > 5
             ? 5
@@ -817,10 +830,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                 color: Colors.black.withValues(alpha: 0.3),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Icon(
-                                Icons.equalizer_rounded,
-                                color: AppColors.phonkRed,
-                                size: 18,
+                              child: const Center(
+                                child: PlayingEqualizer(size: 18),
                               ),
                             ),
                           ),
@@ -847,13 +858,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           const SizedBox(height: 2),
                           Row(
                             children: [
-                              Text(
-                                track.artistName,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.inter(
-                                  fontSize: 11,
-                                  color: AppColors.textMuted,
+                              Flexible(
+                                child: Text(
+                                  track.artistName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    color: AppColors.textMuted,
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 6),
@@ -864,6 +877,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                   fontSize: 10,
                                   color: AppColors.textMuted,
                                 ),
+                                overflow: TextOverflow.visible,
+                                softWrap: false,
                               ),
                             ],
                           ),
@@ -887,26 +902,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          GestureDetector(
+                          PlayPauseButton(
+                            isPlaying: _controller.isPlaying,
+                            size: 36,
+                            iconSize: 20,
                             onTap: () {
                               HapticFeedback.lightImpact();
                               _controller.togglePlayPause();
                             },
-                            child: Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                color: AppColors.phonkRed,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                _controller.isPlaying
-                                    ? Icons.pause_rounded
-                                    : Icons.play_arrow_rounded,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                            ),
                           ),
                           const SizedBox(width: 10),
                           GestureDetector(
@@ -938,7 +941,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     return '$m:$s';
   }
 
-  // ── Floating nav — FIXED overflow ─────────────────────────────────────────
+  // ── Floating nav — sliding indicator, always-on labels ─────────────────────
   Widget _buildFloatingNav() {
     const tabs = [
       (Icons.home_rounded, Icons.home_outlined, 'Home'),
@@ -950,12 +953,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 8, 12, 24),
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+      padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: AppColors.bgElevated.withValues(alpha: 0.92),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: AppColors.borderSubtle),
+        color: AppColors.bgElevated.withValues(alpha: 0.94),
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(
+          color: AppColors.phonkRed.withValues(alpha: 0.35),
+          width: 1.2,
+        ),
         boxShadow: [
+          BoxShadow(
+            color: AppColors.phonkRed.withValues(alpha: 0.18),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.5),
             blurRadius: 30,
@@ -963,50 +974,92 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ),
         ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: List.generate(tabs.length, (i) {
-          final selected = _selectedTab == i;
-          final tab = tabs[i];
-          return GestureDetector(
-            onTap: () => _selectTab(i),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: EdgeInsets.symmetric(
-                horizontal: selected ? 14 : 10,
-                vertical: 8,
-              ),
-              decoration: BoxDecoration(
-                color: selected
-                    ? AppColors.phonkRed.withValues(alpha: 0.15)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    selected ? tab.$1 : tab.$2,
-                    color: selected ? AppColors.phonkRed : AppColors.textMuted,
-                    size: 20,
-                  ),
-                  // Only show label for selected tab
-                  if (selected) ...[
-                    const SizedBox(width: 6),
-                    Text(
-                      tab.$3,
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.phonkRed,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final itemWidth = constraints.maxWidth / tabs.length;
+          return Stack(
+            children: [
+              // Sliding active-tab indicator
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 280),
+                curve: Curves.easeOutCubic,
+                left: itemWidth * _selectedTab,
+                top: 0,
+                bottom: 0,
+                width: itemWidth,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.phonkRed.withValues(alpha: 0.22),
+                          AppColors.phonkRed.withValues(alpha: 0.08),
+                        ],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: AppColors.phonkRed.withValues(alpha: 0.35),
                       ),
                     ),
-                  ],
-                ],
+                  ),
+                ),
               ),
-            ),
+              Row(
+                children: List.generate(tabs.length, (i) {
+                  final selected = _selectedTab == i;
+                  final tab = tabs[i];
+                  return Expanded(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => _selectTab(i),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            AnimatedScale(
+                              scale: selected ? 1.08 : 1.0,
+                              duration: const Duration(milliseconds: 220),
+                              curve: Curves.easeOutBack,
+                              child: Icon(
+                                selected ? tab.$1 : tab.$2,
+                                color: selected
+                                    ? AppColors.phonkRed
+                                    : AppColors.textMuted,
+                                size: 21,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            AnimatedDefaultTextStyle(
+                              duration: const Duration(milliseconds: 220),
+                              style: GoogleFonts.inter(
+                                fontSize: 9.5,
+                                fontWeight: selected
+                                    ? FontWeight.w800
+                                    : FontWeight.w600,
+                                color: selected
+                                    ? AppColors.phonkRed
+                                    : AppColors.textMuted,
+                              ),
+                              child: Text(
+                                tab.$3,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ],
           );
-        }),
+        },
       ),
     );
   }
@@ -1023,10 +1076,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   // ── Track options bottom sheet ────────────────────────────────────────────
-  Future<void> _showTrackOptions(TrackMetadata track) =>
-      _openTrackOptions(track);
+  Future<void> _showTrackOptions(
+    TrackMetadata track, {
+    List<TrackMetadata>? queue,
+  }) => _openTrackOptions(track, queue: queue);
 
-  Future<void> _openTrackOptions(TrackMetadata track) async {
+  Future<void> _openTrackOptions(
+    TrackMetadata track, {
+    List<TrackMetadata>? queue,
+  }) async {
     await showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.bgSurface,
@@ -1044,7 +1102,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 label: 'Play',
                 onTap: () {
                   Navigator.of(sheetCtx).pop();
-                  _controller.playTrack(track, context);
+                  _controller.playTrack(track, context, queue: queue);
                 },
               ),
               _TrackOptionTile(
@@ -1378,11 +1436,6 @@ class _ForYouCardState extends State<_ForYouCard>
                     ),
                   ),
                 ),
-                Positioned(
-                  top: 8,
-                  left: 8,
-                  child: _SourceBadge(storageUrl: widget.track.storageUrl),
-                ),
                 if (widget.isPlaying)
                   Positioned(
                     top: 8,
@@ -1402,11 +1455,7 @@ class _ForYouCardState extends State<_ForYouCard>
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(
-                            Icons.equalizer_rounded,
-                            size: 12,
-                            color: AppColors.phonkRed,
-                          ),
+                          const PlayingEqualizer(size: 12),
                           const SizedBox(width: 4),
                           Text(
                             'Playing',
@@ -1614,13 +1663,13 @@ class _RecentTrackTile extends StatelessWidget {
             const SizedBox(width: 6),
             _TrackMoreButton(onTap: onOptionsTap),
             const SizedBox(width: 6),
-            Icon(
-              isPlaying
-                  ? Icons.equalizer_rounded
-                  : Icons.play_circle_outline_rounded,
-              color: isPlaying ? AppColors.phonkRed : AppColors.textMuted,
-              size: 24,
-            ),
+            isPlaying
+                ? const PlayingEqualizer(size: 20)
+                : const Icon(
+                    Icons.play_circle_outline_rounded,
+                    color: AppColors.textMuted,
+                    size: 24,
+                  ),
           ],
         ),
       ),

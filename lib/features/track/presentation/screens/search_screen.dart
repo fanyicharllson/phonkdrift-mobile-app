@@ -97,7 +97,11 @@ class _SearchScreenState extends State<SearchScreen> {
         isLiked: widget.controller.isLiked(track.trackId),
         onPlay: () {
           Navigator.pop(context);
-          widget.controller.playTrack(track, context);
+          widget.controller.playTrack(
+            track,
+            context,
+            queue: widget.controller.searchTracks,
+          );
         },
         onLike: () {
           Navigator.pop(context);
@@ -110,7 +114,11 @@ class _SearchScreenState extends State<SearchScreen> {
         onYouTube: () {
           Navigator.pop(context);
           // url_launcher handled in controller
-          widget.controller.playTrack(track, context);
+          widget.controller.playTrack(
+            track,
+            context,
+            queue: widget.controller.searchTracks,
+          );
         },
       ),
     );
@@ -424,7 +432,8 @@ class _SearchScreenState extends State<SearchScreen> {
           track: track,
           isPlaying: widget.controller.nowPlaying?.trackId == track.trackId,
           isLiked: widget.controller.isLiked(track.trackId),
-          onTap: () => widget.controller.playTrack(track, context),
+          onTap: () =>
+              widget.controller.playTrack(track, context, queue: tracks),
           onLike: () => _toggleLike(track),
           onOptions: () => _showOptions(track),
         );

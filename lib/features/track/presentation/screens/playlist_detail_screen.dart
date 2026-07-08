@@ -7,6 +7,7 @@ import '../../../../core/network/generated/track.pb.dart';
 import '../../../../core/widgets/phonk_toast.dart';
 import '../../data/repositories/track_repository.dart';
 import '../controllers/track_controller.dart';
+import '../widgets/playing_equalizer.dart';
 
 class PlaylistDetailScreen extends StatefulWidget {
   const PlaylistDetailScreen({
@@ -151,7 +152,8 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                 child: GestureDetector(
-                  onTap: () => widget.controller.playTrack(_tracks.first, context),
+                  onTap: () => widget.controller
+                      .playTrack(_tracks.first, context, queue: _tracks),
                   child: Container(
                     height: 48,
                     decoration: BoxDecoration(
@@ -245,8 +247,11 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                   isPlaying: widget.controller.nowPlaying?.trackId ==
                       _tracks[i].trackId,
                   isLiked: widget.controller.isLiked(_tracks[i].trackId),
-                  onTap: () =>
-                      widget.controller.playTrack(_tracks[i], context),
+                  onTap: () => widget.controller.playTrack(
+                    _tracks[i],
+                    context,
+                    queue: _tracks,
+                  ),
                   onLike: () =>
                       widget.controller.toggleLike(_tracks[i].trackId),
                 ),
@@ -320,8 +325,7 @@ class _PlaylistTrackTile extends StatelessWidget {
             SizedBox(
               width: 28,
               child: isPlaying
-                  ? const Icon(Icons.equalizer_rounded,
-                      color: AppColors.phonkRed, size: 18)
+                  ? const PlayingEqualizer(size: 18)
                   : Text('$index',
                       textAlign: TextAlign.center,
                       style: GoogleFonts.inter(
