@@ -1,3 +1,4 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -54,6 +55,9 @@ class _RouterScreenState extends State<RouterScreen> {
       }
 
       _navigateTo(const HomeScreen());
+
+      // Register / refresh FCM token after confirming session is valid.
+      _registerFCMToken();
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -72,6 +76,15 @@ class _RouterScreenState extends State<RouterScreen> {
             FadeTransition(opacity: anim, child: child),
       ),
     );
+  }
+
+  void _registerFCMToken() {
+    FirebaseMessaging.instance.getToken().then((token) {
+      if (token != null) AuthRepository.instance.updateFCMToken(token);
+    });
+    FirebaseMessaging.instance.onTokenRefresh.listen((token) {
+      AuthRepository.instance.updateFCMToken(token);
+    });
   }
 
   @override

@@ -255,7 +255,7 @@ class AuthRepository {
     if (token.isEmpty) throw AuthException('Not authenticated.');
 
     final uri = Uri.parse(
-      'http://${AppConfig.grpcHost}:8080/api/v1/users/me/avatar',
+      'http://${AppConfig.grpcHost}:${AppConfig.restPort}/api/v1/users/me/avatar',
     );
 
     final request = http.MultipartRequest('POST', uri)
@@ -335,6 +335,19 @@ class AuthRepository {
     } on GrpcError catch (e) {
       throw AuthException(_grpcMessage(e));
     }
+  }
+
+  // ── FCM Token ──────────────────────────────────────────────────────────────
+  Future<void> updateFCMToken(String fcmToken) async {
+    try {
+      final userId = await _storage.getUserId() ?? '';
+      final token = await _storage.getToken() ?? '';
+      if (userId.isEmpty || token.isEmpty) return;
+      await _client.auth.updateFCMToken(
+        UpdateFCMTokenRequest(userId: userId, fcmToken: fcmToken),
+        options: _client.authCallOptions(token),
+      );
+    } catch (_) {}
   }
 
   // ── Local helpers ──────────────────────────────────────────────────────────

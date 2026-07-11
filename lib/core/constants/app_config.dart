@@ -3,7 +3,8 @@ class AppConfig {
 
   // === gRPC GATEWAY — single entry point, gateway routes internally ===
   static const String grpcHost = '167.71.34.119';
-  static const int grpcPort = 30050; // API Gateway NodePort — all services route through here
+  static const int grpcPort = 30050;
+  static const int restPort = 30080; // API Gateway NodePort — all services route through here
 
   // === APP META ===
   static const String appName = 'PhonkDrift';

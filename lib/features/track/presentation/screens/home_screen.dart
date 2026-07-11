@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/network/generated/track.pb.dart';
+import '../../../../core/utils/push_notification_service.dart';
 import '../../../../core/utils/storage_helper.dart';
 import '../../../../core/widgets/phonk_toast.dart';
 import '../controllers/track_controller.dart';
@@ -36,6 +37,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final _searchCtrl = TextEditingController();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   Timer? _searchDebounce;
+  StreamSubscription<TrendingPushPayload>? _trendingPushSub;
   bool _isPlayerScreenOpen = false;
 
   String _phonkLevel = '';
@@ -53,6 +55,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _controller.addListener(_onControllerUpdate);
     _searchCtrl.addListener(_onSearchChanged);
     _loadData();
+    _trendingPushSub = PushNotificationService.instance.onTrendingPush.listen(
+      (payload) {
+        if (!mounted) return;
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => TrendingScreen(controller: _controller),
+          ),
+        );
+      },
+    );
   }
 
   // Covers reopening the app via the now-playing notification, since Android
@@ -132,6 +144,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _controller.removeListener(_onControllerUpdate);
     _pageController.dispose();
     _searchDebounce?.cancel();
+    _trendingPushSub?.cancel();
     _searchCtrl.dispose();
     _controller.dispose();
     super.dispose();

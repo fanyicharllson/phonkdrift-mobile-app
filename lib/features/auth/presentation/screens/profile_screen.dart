@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/utils/push_notification_service.dart';
 import '../../../../core/utils/storage_helper.dart';
 import '../../../../core/widgets/phonk_button.dart';
 import '../../../../core/widgets/phonk_error_banner.dart';
@@ -28,11 +30,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // Loading states
   bool _isLoadingProfile = true;
+  bool _isUploadingAvatar = false;
+  StreamSubscription<void>? _profileUpdatedSub;
 
   @override
   void initState() {
     super.initState();
     _loadProfile();
+    _profileUpdatedSub = PushNotificationService.instance.onProfileUpdated
+        .listen((_) => _loadProfile());
+  }
+
+  @override
+  void dispose() {
+    _profileUpdatedSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadProfile() async {
@@ -99,11 +111,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (confirmed != true || !mounted) return;
 
-    // Upload
+    // Show loading overlay on avatar
+    setState(() => _isUploadingAvatar = true);
+
     try {
       final url = await AuthRepository.instance.uploadAvatar(File(picked.path));
       if (mounted) {
-        setState(() => _avatarUrl = url);
+        setState(() {
+          _avatarUrl = url;
+          _isUploadingAvatar = false;
+        });
         PhonkToast.show(
           context,
           message: 'Profile picture updated.',
@@ -112,6 +129,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
+        setState(() => _isUploadingAvatar = false);
         PhonkToast.show(
           context,
           message: e.toString().replaceAll('AuthException: ', ''),
@@ -178,7 +196,52 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: !_isUploadingAvatar,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop || !_isUploadingAvatar) return;
+        final leave = await showDialog<bool>(
+          context: context,
+          builder: (_) => AlertDialog(
+            backgroundColor: AppColors.bgSurface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: Text(
+              'Upload in progress',
+              style: GoogleFonts.inter(
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            content: Text(
+              'Your profile picture is still uploading. Discard it?',
+              style: GoogleFonts.inter(
+                color: AppColors.textSecondary,
+                fontSize: 14,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(
+                  'Stay',
+                  style: GoogleFonts.inter(color: AppColors.textMuted),
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(
+                  'Discard',
+                  style: GoogleFonts.inter(color: AppColors.phonkRed),
+                ),
+              ),
+            ],
+          ),
+        );
+        if (leave == true && mounted) Navigator.of(context).pop();
+      },
+      child: Scaffold(
       backgroundColor: AppColors.bgDeep,
       body: Stack(
         children: [
@@ -262,7 +325,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           child: Stack(
                             children: [
                               GestureDetector(
-                                onTap: _openAvatarPicker,
+                                onTap: _isUploadingAvatar ? null : _openAvatarPicker,
                                 child: Container(
                                   width: 100,
                                   height: 100,
@@ -296,7 +359,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   ),
                                 ),
                               ),
+                              // Upload loading overlay
+                              if (_isUploadingAvatar)
+                                Positioned.fill(
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.black.withValues(alpha: 0.55),
+                                    ),
+                                    child: const Center(
+                                      child: SizedBox(
+                                        width: 28,
+                                        height: 28,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2.5,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               // Camera badge
+                              if (!_isUploadingAvatar)
                               Positioned(
                                 bottom: 0,
                                 right: 0,
@@ -475,6 +559,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ],
       ),
+    ),
     );
   }
 
