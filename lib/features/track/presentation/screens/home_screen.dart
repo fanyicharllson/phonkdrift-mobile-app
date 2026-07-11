@@ -13,10 +13,13 @@ import '../../../../core/widgets/phonk_toast.dart';
 import '../controllers/track_controller.dart';
 import 'trending_screen.dart';
 import '../../../auth/presentation/screens/login_screen.dart';
+import '../../../auth/presentation/screens/profile_screen.dart';
 import 'player_screen.dart';
 import 'search_screen.dart';
 import 'library_screen.dart';
 import '../widgets/add_to_playlist_sheet.dart';
+import '../widgets/app_sidebar.dart';
+import '../widgets/feedback_prompt_sheet.dart';
 import '../widgets/play_pause_button.dart';
 import '../widgets/playing_equalizer.dart';
 
@@ -31,11 +34,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final _controller = TrackController();
   final _pageController = PageController();
   final _searchCtrl = TextEditingController();
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
   Timer? _searchDebounce;
   bool _isPlayerScreenOpen = false;
 
   String _phonkLevel = '';
   String _username = '';
+  String _avatarUrl = '';
   int _selectedTab = 0;
   int _selectedCategory = 0;
 
@@ -79,29 +84,35 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         type: ToastType.error,
       );
     }
+    if (_controller.shouldPromptFeedback) {
+      // Flip the flag immediately so rapid notifyListeners() ticks
+      // (position updates fire many times a second) can't double-trigger.
+      _controller.markFeedbackPrompted();
+      showFeedbackPromptSheet(context);
+    }
   }
 
   Future<void> _loadData() async {
     final results = await Future.wait([
       StorageHelper.instance.getPhonkLevel(),
       StorageHelper.instance.getUsername(),
+      StorageHelper.instance.getAvatarUrl(),
     ]);
-    debugPrint('Results: $results');
     if (mounted) {
       setState(() {
         _phonkLevel = results[0] ?? '';
         _username = results[1] ?? '';
+        _avatarUrl = results[2] ?? '';
       });
     }
     await _controller.loadHomeData();
   }
 
-  Future<void> _logout() async {
-    await StorageHelper.instance.clearSession();
-    if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-      (_) => false,
+  Widget _headerAvatarFallback() {
+    return const Icon(
+      Icons.person_outline_rounded,
+      color: Colors.white,
+      size: 20,
     );
   }
 
@@ -129,8 +140,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: AppColors.bgDeep,
       extendBody: true,
+      endDrawer: AppSidebar(onProfileTap: () => _selectTab(4)),
       body: Stack(
         children: [
           // ── Background glow orbs ───────────────────────────────────────
@@ -181,7 +194,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               SearchScreen(controller: _controller),
               _buildPlaceholderPage('Community coming soon'),
               LibraryScreen(controller: _controller),
-              _buildPlaceholderPage('Profile coming soon'),
+              const ProfileScreen(),
             ],
           ),
 
@@ -338,24 +351,31 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 child: Container(
                   width: 38,
                   height: 38,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: LinearGradient(
+                    gradient: const LinearGradient(
                       colors: [AppColors.phonkRed, Color(0xFF8B0034)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
+                    border: Border.all(
+                      color: AppColors.phonkRed.withValues(alpha: 0.3),
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.person_outline_rounded,
-                    color: Colors.white,
-                    size: 20,
+                  child: ClipOval(
+                    child: _avatarUrl.isNotEmpty
+                        ? CachedNetworkImage(
+                            imageUrl: _avatarUrl,
+                            fit: BoxFit.cover,
+                            errorWidget: (_, __, ___) => _headerAvatarFallback(),
+                          )
+                        : _headerAvatarFallback(),
                   ),
                 ),
               ),
               const SizedBox(width: 6),
               GestureDetector(
-                onTap: () => _showHeaderMenu(),
+                onTap: () => _scaffoldKey.currentState?.openEndDrawer(),
                 child: Container(
                   width: 32,
                   height: 32,
@@ -411,69 +431,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final list = greetings[period]!;
     // Rotate based on day of month so it changes daily
     return list[DateTime.now().day % list.length];
-  }
-
-  // Header 3-dot menu
-  void _showHeaderMenu() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) => Container(
-        decoration: const BoxDecoration(
-          color: AppColors.bgSurface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 36,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: AppColors.borderSubtle,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                _MenuTile(
-                  icon: Icons.person_outline_rounded,
-                  label: 'Profile',
-                  onTap: () {
-                    Navigator.pop(context);
-                    _selectTab(4);
-                  },
-                ),
-                _MenuTile(
-                  icon: Icons.settings_outlined,
-                  label: 'Settings',
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                ),
-                _MenuTile(
-                  icon: Icons.info_outline_rounded,
-                  label: 'About PhonkDrift',
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                ),
-                const Divider(color: AppColors.borderSubtle, height: 1),
-                _MenuTile(
-                  icon: Icons.logout_rounded,
-                  label: 'Sign Out',
-                  color: AppColors.phonkRed,
-                  onTap: _logout,
-                ),
-                const SizedBox(height: 8),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
   }
 
   // ── Stats row ────────────────────────────────────────────────────────────
@@ -1163,35 +1120,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 }
 
-class _MenuTile extends StatelessWidget {
-  const _MenuTile({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.color,
-  });
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final Color? color;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(icon, color: color ?? AppColors.textSecondary, size: 22),
-      title: Text(
-        label,
-        style: GoogleFonts.inter(
-          fontSize: 15,
-          fontWeight: FontWeight.w500,
-          color: color ?? AppColors.textPrimary,
-        ),
-      ),
-      onTap: onTap,
-      dense: true,
-    );
-  }
-}
 
 // ── Smart Error Tile ──────────────────────────────────────────────────────────
 class _SmartErrorTile extends StatelessWidget {

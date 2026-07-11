@@ -32,6 +32,9 @@ class StorageHelper {
   Future<void> markOnboardingSeen() =>
       _storage.write(key: AppConfig.keyOnboardingSeen, value: 'true');
 
+  Future<void> markFeedbackPrompted() =>
+      _storage.write(key: AppConfig.keyFeedbackPrompted, value: 'true');
+
   Future<void> saveSession({
     required String token,
     required String userId,
@@ -46,17 +49,32 @@ class StorageHelper {
     ]);
   }
 
+  Future<void> write(String key, String value) =>
+      _storage.write(key: key, value: value);
+
+  Future<String?> getAvatarUrl() => _storage.read(key: 'pd_avatar_url');
+
   // ── Read ───────────────────────────────────────────────────────────────────
   Future<String?> getToken() => _storage.read(key: AppConfig.keyAuthToken);
   Future<String?> getUserId() => _storage.read(key: AppConfig.keyUserId);
   Future<String?> getUsername() => _storage.read(key: AppConfig.keyUsername);
-  Future<String?> getPhonkLevel() => _storage.read(key: AppConfig.keyPhonkLevel);
+  Future<String?> getPhonkLevel() =>
+      _storage.read(key: AppConfig.keyPhonkLevel);
   Future<String?> getPendingEmail() =>
       _storage.read(key: AppConfig.keyPendingVerifyEmail);
 
   Future<bool> hasSeenOnboarding() async {
     try {
       final val = await _storage.read(key: AppConfig.keyOnboardingSeen);
+      return val == 'true';
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> hasSeenFeedbackPrompt() async {
+    try {
+      final val = await _storage.read(key: AppConfig.keyFeedbackPrompted);
       return val == 'true';
     } catch (_) {
       return false;

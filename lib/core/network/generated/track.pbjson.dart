@@ -324,6 +324,20 @@ final $typed_data.Uint8List playlistActionResponseDescriptor =
         'ChZQbGF5bGlzdEFjdGlvblJlc3BvbnNlEhgKB3N1Y2Nlc3MYASABKAhSB3N1Y2Nlc3MSGAoHbW'
         'Vzc2FnZRgCIAEoCVIHbWVzc2FnZQ==');
 
+@$core.Deprecated('Use deletePlaylistRequestDescriptor instead')
+const DeletePlaylistRequest$json = {
+  '1': 'DeletePlaylistRequest',
+  '2': [
+    {'1': 'playlist_id', '3': 1, '4': 1, '5': 9, '10': 'playlistId'},
+    {'1': 'user_id', '3': 2, '4': 1, '5': 9, '10': 'userId'},
+  ],
+};
+
+/// Descriptor for `DeletePlaylistRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List deletePlaylistRequestDescriptor = $convert.base64Decode(
+    'ChVEZWxldGVQbGF5bGlzdFJlcXVlc3QSHwoLcGxheWxpc3RfaWQYASABKAlSCnBsYXlsaXN0SW'
+    'QSFwoHdXNlcl9pZBgCIAEoCVIGdXNlcklk');
+
 @$core.Deprecated('Use getPlaylistRequestDescriptor instead')
 const GetPlaylistRequest$json = {
   '1': 'GetPlaylistRequest',

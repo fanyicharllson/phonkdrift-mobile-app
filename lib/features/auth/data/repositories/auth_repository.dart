@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:grpc/grpc.dart';
+import '../../../../core/constants/app_config.dart';
 import '../../../../core/network/grpc_client.dart';
 import '../../../../core/network/generated/auth.pb.dart';
 import '../../../../core/utils/storage_helper.dart';
+import 'dart:io';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class BanStatus {
   const BanStatus({required this.isBanned, required this.reason});
@@ -215,6 +219,119 @@ class AuthRepository {
           newPassword: newPassword,
         ),
       );
+    } on GrpcError catch (e) {
+      throw AuthException(_grpcMessage(e));
+    }
+  }
+
+  // ── Feedback ───────────────────────────────────────────────────────────────
+  Future<SubmitFeedbackResponse> submitFeedback({
+    required int rating,
+    String comment = '',
+  }) async {
+    try {
+      final userId = await _storage.getUserId() ?? '';
+      final token = await _storage.getToken() ?? '';
+      return await _client.auth.submitFeedback(
+        SubmitFeedbackRequest(
+          userId: userId,
+          rating: rating,
+          comment: comment,
+          appVersion: AppConfig.appVersion,
+        ),
+        options: _client.authCallOptions(token),
+      );
+    } on GrpcError catch (e) {
+      throw AuthException(_grpcMessage(e));
+    }
+  }
+
+  // Add these imports at top
+
+  // Add these methods to AuthRepository class:
+
+  Future<String> uploadAvatar(File imageFile) async {
+    final token = await _storage.getToken() ?? '';
+    if (token.isEmpty) throw AuthException('Not authenticated.');
+
+    final uri = Uri.parse(
+      'http://${AppConfig.grpcHost}:8080/api/v1/users/me/avatar',
+    );
+
+    final request = http.MultipartRequest('POST', uri)
+      ..headers['Authorization'] = 'Bearer $token'
+      ..files.add(await http.MultipartFile.fromPath('avatar', imageFile.path));
+
+    final streamed = await request.send().timeout(
+      const Duration(seconds: 30),
+      onTimeout: () => throw AuthException('Upload timed out. Try again.'),
+    );
+
+    final response = await http.Response.fromStream(streamed);
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+
+    if (response.statusCode == 200) {
+      final url = body['avatar_url'] as String? ?? '';
+      if (url.isNotEmpty) await _storage.write('pd_avatar_url', url);
+      return url;
+    }
+
+    final errMsg = body['error'] as String? ?? 'Upload failed.';
+    throw AuthException(errMsg);
+  }
+
+  Future<String> updateUsername(String newUsername) async {
+    try {
+      final userId = await _storage.getUserId() ?? '';
+      final token = await _storage.getToken() ?? '';
+      final res = await _client.auth.updateUsername(
+        UpdateUsernameRequest(userId: userId, newUsername: newUsername),
+        options: _client.authCallOptions(token),
+      );
+      if (res.success) {
+        await _storage.saveUsername(res.user.username);
+        return res.user.username;
+      }
+      throw AuthException('Could not update username.');
+    } on GrpcError catch (e) {
+      throw AuthException(_grpcMessage(e));
+    }
+  }
+
+  Future<void> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final userId = await _storage.getUserId() ?? '';
+      final token = await _storage.getToken() ?? '';
+      final res = await _client.auth.changePassword(
+        ChangePasswordRequest(
+          userId: userId,
+          oldPassword: oldPassword,
+          newPassword: newPassword,
+        ),
+        options: _client.authCallOptions(token),
+      );
+      if (!res.success) {
+        throw AuthException(
+          res.message.isNotEmpty ? res.message : 'Password change failed.',
+        );
+      }
+    } on GrpcError catch (e) {
+      throw AuthException(_grpcMessage(e));
+    }
+  }
+
+  Future<void> updatePhonkLevel2(String level) async {
+    try {
+      final userId = await _storage.getUserId() ?? '';
+      final token = await _storage.getToken() ?? '';
+      final res = await _client.auth.updateProfile(
+        UpdateProfileRequest(userId: userId, phonkLevel: level),
+        options: _client.authCallOptions(token),
+      );
+      if (res.success) await _storage.savePhonkLevel(level);
     } on GrpcError catch (e) {
       throw AuthException(_grpcMessage(e));
     }

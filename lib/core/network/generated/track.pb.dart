@@ -1324,6 +1324,73 @@ class PlaylistActionResponse extends $pb.GeneratedMessage {
   void clearMessage() => $_clearField(2);
 }
 
+class DeletePlaylistRequest extends $pb.GeneratedMessage {
+  factory DeletePlaylistRequest({
+    $core.String? playlistId,
+    $core.String? userId,
+  }) {
+    final result = create();
+    if (playlistId != null) result.playlistId = playlistId;
+    if (userId != null) result.userId = userId;
+    return result;
+  }
+
+  DeletePlaylistRequest._();
+
+  factory DeletePlaylistRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory DeletePlaylistRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'DeletePlaylistRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'track'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'playlistId')
+    ..aOS(2, _omitFieldNames ? '' : 'userId')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  DeletePlaylistRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  DeletePlaylistRequest copyWith(
+          void Function(DeletePlaylistRequest) updates) =>
+      super.copyWith((message) => updates(message as DeletePlaylistRequest))
+          as DeletePlaylistRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static DeletePlaylistRequest create() => DeletePlaylistRequest._();
+  @$core.override
+  DeletePlaylistRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static DeletePlaylistRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<DeletePlaylistRequest>(create);
+  static DeletePlaylistRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get playlistId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set playlistId($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasPlaylistId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearPlaylistId() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get userId => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set userId($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasUserId() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearUserId() => $_clearField(2);
+}
+
 class GetPlaylistRequest extends $pb.GeneratedMessage {
   factory GetPlaylistRequest({
     $core.String? playlistId,

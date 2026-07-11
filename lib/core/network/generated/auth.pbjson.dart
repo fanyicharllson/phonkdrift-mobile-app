@@ -320,6 +320,186 @@ final $typed_data.Uint8List verifyResetCodeResponseDescriptor =
         'ChdWZXJpZnlSZXNldENvZGVSZXNwb25zZRIYCgdzdWNjZXNzGAEgASgIUgdzdWNjZXNzEh8KC3'
         'Jlc2V0X3Rva2VuGAIgASgJUgpyZXNldFRva2Vu');
 
+@$core.Deprecated('Use uploadAvatarRequestDescriptor instead')
+const UploadAvatarRequest$json = {
+  '1': 'UploadAvatarRequest',
+  '2': [
+    {'1': 'user_id', '3': 1, '4': 1, '5': 9, '10': 'userId'},
+    {'1': 'avatar_url', '3': 2, '4': 1, '5': 9, '10': 'avatarUrl'},
+  ],
+};
+
+/// Descriptor for `UploadAvatarRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List uploadAvatarRequestDescriptor = $convert.base64Decode(
+    'ChNVcGxvYWRBdmF0YXJSZXF1ZXN0EhcKB3VzZXJfaWQYASABKAlSBnVzZXJJZBIdCgphdmF0YX'
+    'JfdXJsGAIgASgJUglhdmF0YXJVcmw=');
+
+@$core.Deprecated('Use uploadAvatarResponseDescriptor instead')
+const UploadAvatarResponse$json = {
+  '1': 'UploadAvatarResponse',
+  '2': [
+    {'1': 'success', '3': 1, '4': 1, '5': 8, '10': 'success'},
+    {'1': 'avatar_url', '3': 2, '4': 1, '5': 9, '10': 'avatarUrl'},
+  ],
+};
+
+/// Descriptor for `UploadAvatarResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List uploadAvatarResponseDescriptor = $convert.base64Decode(
+    'ChRVcGxvYWRBdmF0YXJSZXNwb25zZRIYCgdzdWNjZXNzGAEgASgIUgdzdWNjZXNzEh0KCmF2YX'
+    'Rhcl91cmwYAiABKAlSCWF2YXRhclVybA==');
+
+@$core.Deprecated('Use changePasswordRequestDescriptor instead')
+const ChangePasswordRequest$json = {
+  '1': 'ChangePasswordRequest',
+  '2': [
+    {'1': 'user_id', '3': 1, '4': 1, '5': 9, '10': 'userId'},
+    {'1': 'old_password', '3': 2, '4': 1, '5': 9, '10': 'oldPassword'},
+    {'1': 'new_password', '3': 3, '4': 1, '5': 9, '10': 'newPassword'},
+  ],
+};
+
+/// Descriptor for `ChangePasswordRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List changePasswordRequestDescriptor = $convert.base64Decode(
+    'ChVDaGFuZ2VQYXNzd29yZFJlcXVlc3QSFwoHdXNlcl9pZBgBIAEoCVIGdXNlcklkEiEKDG9sZF'
+    '9wYXNzd29yZBgCIAEoCVILb2xkUGFzc3dvcmQSIQoMbmV3X3Bhc3N3b3JkGAMgASgJUgtuZXdQ'
+    'YXNzd29yZA==');
+
+@$core.Deprecated('Use changePasswordResponseDescriptor instead')
+const ChangePasswordResponse$json = {
+  '1': 'ChangePasswordResponse',
+  '2': [
+    {'1': 'success', '3': 1, '4': 1, '5': 8, '10': 'success'},
+    {'1': 'message', '3': 2, '4': 1, '5': 9, '10': 'message'},
+  ],
+};
+
+/// Descriptor for `ChangePasswordResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List changePasswordResponseDescriptor =
+    $convert.base64Decode(
+        'ChZDaGFuZ2VQYXNzd29yZFJlc3BvbnNlEhgKB3N1Y2Nlc3MYASABKAhSB3N1Y2Nlc3MSGAoHbW'
+        'Vzc2FnZRgCIAEoCVIHbWVzc2FnZQ==');
+
+@$core.Deprecated('Use updateUsernameRequestDescriptor instead')
+const UpdateUsernameRequest$json = {
+  '1': 'UpdateUsernameRequest',
+  '2': [
+    {'1': 'user_id', '3': 1, '4': 1, '5': 9, '10': 'userId'},
+    {'1': 'new_username', '3': 2, '4': 1, '5': 9, '10': 'newUsername'},
+  ],
+};
+
+/// Descriptor for `UpdateUsernameRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List updateUsernameRequestDescriptor = $convert.base64Decode(
+    'ChVVcGRhdGVVc2VybmFtZVJlcXVlc3QSFwoHdXNlcl9pZBgBIAEoCVIGdXNlcklkEiEKDG5ld1'
+    '91c2VybmFtZRgCIAEoCVILbmV3VXNlcm5hbWU=');
+
+@$core.Deprecated('Use updateUsernameResponseDescriptor instead')
+const UpdateUsernameResponse$json = {
+  '1': 'UpdateUsernameResponse',
+  '2': [
+    {'1': 'success', '3': 1, '4': 1, '5': 8, '10': 'success'},
+    {'1': 'user', '3': 2, '4': 1, '5': 11, '6': '.auth.User', '10': 'user'},
+  ],
+};
+
+/// Descriptor for `UpdateUsernameResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List updateUsernameResponseDescriptor =
+    $convert.base64Decode(
+        'ChZVcGRhdGVVc2VybmFtZVJlc3BvbnNlEhgKB3N1Y2Nlc3MYASABKAhSB3N1Y2Nlc3MSHgoEdX'
+        'NlchgCIAEoCzIKLmF1dGguVXNlclIEdXNlcg==');
+
+@$core.Deprecated('Use submitFeedbackRequestDescriptor instead')
+const SubmitFeedbackRequest$json = {
+  '1': 'SubmitFeedbackRequest',
+  '2': [
+    {'1': 'user_id', '3': 1, '4': 1, '5': 9, '10': 'userId'},
+    {'1': 'rating', '3': 2, '4': 1, '5': 5, '10': 'rating'},
+    {'1': 'comment', '3': 3, '4': 1, '5': 9, '10': 'comment'},
+    {'1': 'app_version', '3': 4, '4': 1, '5': 9, '10': 'appVersion'},
+  ],
+};
+
+/// Descriptor for `SubmitFeedbackRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List submitFeedbackRequestDescriptor = $convert.base64Decode(
+    'ChVTdWJtaXRGZWVkYmFja1JlcXVlc3QSFwoHdXNlcl9pZBgBIAEoCVIGdXNlcklkEhYKBnJhdG'
+    'luZxgCIAEoBVIGcmF0aW5nEhgKB2NvbW1lbnQYAyABKAlSB2NvbW1lbnQSHwoLYXBwX3ZlcnNp'
+    'b24YBCABKAlSCmFwcFZlcnNpb24=');
+
+@$core.Deprecated('Use submitFeedbackResponseDescriptor instead')
+const SubmitFeedbackResponse$json = {
+  '1': 'SubmitFeedbackResponse',
+  '2': [
+    {'1': 'success', '3': 1, '4': 1, '5': 8, '10': 'success'},
+    {'1': 'feedback_id', '3': 2, '4': 1, '5': 9, '10': 'feedbackId'},
+  ],
+};
+
+/// Descriptor for `SubmitFeedbackResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List submitFeedbackResponseDescriptor =
+    $convert.base64Decode(
+        'ChZTdWJtaXRGZWVkYmFja1Jlc3BvbnNlEhgKB3N1Y2Nlc3MYASABKAhSB3N1Y2Nlc3MSHwoLZm'
+        'VlZGJhY2tfaWQYAiABKAlSCmZlZWRiYWNrSWQ=');
+
+@$core.Deprecated('Use feedbackEntryDescriptor instead')
+const FeedbackEntry$json = {
+  '1': 'FeedbackEntry',
+  '2': [
+    {'1': 'feedback_id', '3': 1, '4': 1, '5': 9, '10': 'feedbackId'},
+    {'1': 'user_id', '3': 2, '4': 1, '5': 9, '10': 'userId'},
+    {'1': 'username', '3': 3, '4': 1, '5': 9, '10': 'username'},
+    {'1': 'email', '3': 4, '4': 1, '5': 9, '10': 'email'},
+    {'1': 'rating', '3': 5, '4': 1, '5': 5, '10': 'rating'},
+    {'1': 'comment', '3': 6, '4': 1, '5': 9, '10': 'comment'},
+    {'1': 'app_version', '3': 7, '4': 1, '5': 9, '10': 'appVersion'},
+    {'1': 'created_at', '3': 8, '4': 1, '5': 3, '10': 'createdAt'},
+  ],
+};
+
+/// Descriptor for `FeedbackEntry`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List feedbackEntryDescriptor = $convert.base64Decode(
+    'Cg1GZWVkYmFja0VudHJ5Eh8KC2ZlZWRiYWNrX2lkGAEgASgJUgpmZWVkYmFja0lkEhcKB3VzZX'
+    'JfaWQYAiABKAlSBnVzZXJJZBIaCgh1c2VybmFtZRgDIAEoCVIIdXNlcm5hbWUSFAoFZW1haWwY'
+    'BCABKAlSBWVtYWlsEhYKBnJhdGluZxgFIAEoBVIGcmF0aW5nEhgKB2NvbW1lbnQYBiABKAlSB2'
+    'NvbW1lbnQSHwoLYXBwX3ZlcnNpb24YByABKAlSCmFwcFZlcnNpb24SHQoKY3JlYXRlZF9hdBgI'
+    'IAEoA1IJY3JlYXRlZEF0');
+
+@$core.Deprecated('Use listFeedbackAdminRequestDescriptor instead')
+const ListFeedbackAdminRequest$json = {
+  '1': 'ListFeedbackAdminRequest',
+  '2': [
+    {'1': 'page', '3': 1, '4': 1, '5': 5, '10': 'page'},
+    {'1': 'limit', '3': 2, '4': 1, '5': 5, '10': 'limit'},
+  ],
+};
+
+/// Descriptor for `ListFeedbackAdminRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List listFeedbackAdminRequestDescriptor =
+    $convert.base64Decode(
+        'ChhMaXN0RmVlZGJhY2tBZG1pblJlcXVlc3QSEgoEcGFnZRgBIAEoBVIEcGFnZRIUCgVsaW1pdB'
+        'gCIAEoBVIFbGltaXQ=');
+
+@$core.Deprecated('Use listFeedbackAdminResponseDescriptor instead')
+const ListFeedbackAdminResponse$json = {
+  '1': 'ListFeedbackAdminResponse',
+  '2': [
+    {
+      '1': 'feedback',
+      '3': 1,
+      '4': 3,
+      '5': 11,
+      '6': '.auth.FeedbackEntry',
+      '10': 'feedback'
+    },
+    {'1': 'total', '3': 2, '4': 1, '5': 5, '10': 'total'},
+  ],
+};
+
+/// Descriptor for `ListFeedbackAdminResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List listFeedbackAdminResponseDescriptor =
+    $convert.base64Decode(
+        'ChlMaXN0RmVlZGJhY2tBZG1pblJlc3BvbnNlEi8KCGZlZWRiYWNrGAEgAygLMhMuYXV0aC5GZW'
+        'VkYmFja0VudHJ5UghmZWVkYmFjaxIUCgV0b3RhbBgCIAEoBVIFdG90YWw=');
+
 @$core.Deprecated('Use banUserRequestDescriptor instead')
 const BanUserRequest$json = {
   '1': 'BanUserRequest',

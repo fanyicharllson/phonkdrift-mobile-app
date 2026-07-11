@@ -7,12 +7,14 @@ import '../../../auth/data/repositories/auth_repository.dart';
 import '../../../auth/presentation/screens/banned_screen.dart';
 import '../../../../core/navigation/app_navigator.dart';
 import '../../../../core/network/generated/track.pb.dart';
+import '../../../../core/utils/storage_helper.dart';
 import '../../data/repositories/track_repository.dart';
 
 enum TrackLoadState { idle, loading, loaded, error }
 
 class TrackController extends ChangeNotifier {
   final _repo = TrackRepository.instance;
+  final _storage = StorageHelper.instance;
   final _player = AudioPlayer();
   final Set<String> _likedTrackIds = {};
   Set<String> get likedTrackIds => _likedTrackIds;
@@ -73,9 +75,27 @@ class TrackController extends ChangeNotifier {
   bool get hasNext => _queueIndex >= 0 && _queueIndex + 1 < _queue.length;
   bool get hasPrevious => _queueIndex > 0;
 
+  // ── Feedback prompt (shown once, after some real listening) ────────────────
+  static const _feedbackThresholdSeconds = 90;
+  int _cumulativeListenSeconds = 0;
+  bool _hasPromptedFeedback = false;
+  bool _feedbackEligible = false;
+
+  bool get shouldPromptFeedback => _feedbackEligible && !_hasPromptedFeedback;
+
+  void markFeedbackPrompted() {
+    _hasPromptedFeedback = true;
+    _storage.markFeedbackPrompted();
+  }
+
   TrackController() {
     _initAudioSession();
     _listenToPlayer();
+    _loadFeedbackPromptState();
+  }
+
+  Future<void> _loadFeedbackPromptState() async {
+    _hasPromptedFeedback = await _storage.hasSeenFeedbackPrompt();
   }
 
   // ── Audio session (handles interruptions) ─────────────────────────────────
@@ -147,6 +167,14 @@ class TrackController extends ChangeNotifier {
           positionSeconds: _position.inSeconds,
           isCompleted: false,
         );
+
+        if (!_hasPromptedFeedback && !_feedbackEligible) {
+          _cumulativeListenSeconds += 30;
+          if (_cumulativeListenSeconds >= _feedbackThresholdSeconds) {
+            _feedbackEligible = true;
+            notifyListeners();
+          }
+        }
       }
     });
   }
@@ -370,7 +398,7 @@ class TrackController extends ChangeNotifier {
       _forYouState = TrackLoadState.loaded;
     } catch (e) {
       _forYouError = e.toString();
-      debugPrint('FOR_YOU_ERROR: $_forYouError'); 
+      debugPrint('FOR_YOU_ERROR: $_forYouError');
       _forYouState = TrackLoadState.error;
     }
     notifyListeners();

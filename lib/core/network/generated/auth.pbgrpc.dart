@@ -103,6 +103,43 @@ class AuthServiceClient extends $grpc.Client {
     return $createUnaryCall(_$verifyResetCode, request, options: options);
   }
 
+  /// Profile management
+  $grpc.ResponseFuture<$0.UploadAvatarResponse> uploadAvatar(
+    $0.UploadAvatarRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$uploadAvatar, request, options: options);
+  }
+
+  $grpc.ResponseFuture<$0.ChangePasswordResponse> changePassword(
+    $0.ChangePasswordRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$changePassword, request, options: options);
+  }
+
+  $grpc.ResponseFuture<$0.UpdateUsernameResponse> updateUsername(
+    $0.UpdateUsernameRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$updateUsername, request, options: options);
+  }
+
+  /// Feedback
+  $grpc.ResponseFuture<$0.SubmitFeedbackResponse> submitFeedback(
+    $0.SubmitFeedbackRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$submitFeedback, request, options: options);
+  }
+
+  $grpc.ResponseFuture<$0.ListFeedbackAdminResponse> listFeedbackAdmin(
+    $0.ListFeedbackAdminRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$listFeedbackAdmin, request, options: options);
+  }
+
   /// Admin operations
   $grpc.ResponseFuture<$0.BanUserResponse> banUser(
     $0.BanUserRequest request, {
@@ -199,6 +236,31 @@ class AuthServiceClient extends $grpc.Client {
           '/auth.AuthService/VerifyResetCode',
           ($0.VerifyResetCodeRequest value) => value.writeToBuffer(),
           $0.VerifyResetCodeResponse.fromBuffer);
+  static final _$uploadAvatar =
+      $grpc.ClientMethod<$0.UploadAvatarRequest, $0.UploadAvatarResponse>(
+          '/auth.AuthService/UploadAvatar',
+          ($0.UploadAvatarRequest value) => value.writeToBuffer(),
+          $0.UploadAvatarResponse.fromBuffer);
+  static final _$changePassword =
+      $grpc.ClientMethod<$0.ChangePasswordRequest, $0.ChangePasswordResponse>(
+          '/auth.AuthService/ChangePassword',
+          ($0.ChangePasswordRequest value) => value.writeToBuffer(),
+          $0.ChangePasswordResponse.fromBuffer);
+  static final _$updateUsername =
+      $grpc.ClientMethod<$0.UpdateUsernameRequest, $0.UpdateUsernameResponse>(
+          '/auth.AuthService/UpdateUsername',
+          ($0.UpdateUsernameRequest value) => value.writeToBuffer(),
+          $0.UpdateUsernameResponse.fromBuffer);
+  static final _$submitFeedback =
+      $grpc.ClientMethod<$0.SubmitFeedbackRequest, $0.SubmitFeedbackResponse>(
+          '/auth.AuthService/SubmitFeedback',
+          ($0.SubmitFeedbackRequest value) => value.writeToBuffer(),
+          $0.SubmitFeedbackResponse.fromBuffer);
+  static final _$listFeedbackAdmin = $grpc.ClientMethod<
+          $0.ListFeedbackAdminRequest, $0.ListFeedbackAdminResponse>(
+      '/auth.AuthService/ListFeedbackAdmin',
+      ($0.ListFeedbackAdminRequest value) => value.writeToBuffer(),
+      $0.ListFeedbackAdminResponse.fromBuffer);
   static final _$banUser =
       $grpc.ClientMethod<$0.BanUserRequest, $0.BanUserResponse>(
           '/auth.AuthService/BanUser',
@@ -316,6 +378,51 @@ abstract class AuthServiceBase extends $grpc.Service {
         ($core.List<$core.int> value) =>
             $0.VerifyResetCodeRequest.fromBuffer(value),
         ($0.VerifyResetCodeResponse value) => value.writeToBuffer()));
+    $addMethod(
+        $grpc.ServiceMethod<$0.UploadAvatarRequest, $0.UploadAvatarResponse>(
+            'UploadAvatar',
+            uploadAvatar_Pre,
+            false,
+            false,
+            ($core.List<$core.int> value) =>
+                $0.UploadAvatarRequest.fromBuffer(value),
+            ($0.UploadAvatarResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.ChangePasswordRequest,
+            $0.ChangePasswordResponse>(
+        'ChangePassword',
+        changePassword_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) =>
+            $0.ChangePasswordRequest.fromBuffer(value),
+        ($0.ChangePasswordResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.UpdateUsernameRequest,
+            $0.UpdateUsernameResponse>(
+        'UpdateUsername',
+        updateUsername_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) =>
+            $0.UpdateUsernameRequest.fromBuffer(value),
+        ($0.UpdateUsernameResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.SubmitFeedbackRequest,
+            $0.SubmitFeedbackResponse>(
+        'SubmitFeedback',
+        submitFeedback_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) =>
+            $0.SubmitFeedbackRequest.fromBuffer(value),
+        ($0.SubmitFeedbackResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.ListFeedbackAdminRequest,
+            $0.ListFeedbackAdminResponse>(
+        'ListFeedbackAdmin',
+        listFeedbackAdmin_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) =>
+            $0.ListFeedbackAdminRequest.fromBuffer(value),
+        ($0.ListFeedbackAdminResponse value) => value.writeToBuffer()));
     $addMethod($grpc.ServiceMethod<$0.BanUserRequest, $0.BanUserResponse>(
         'BanUser',
         banUser_Pre,
@@ -452,6 +559,51 @@ abstract class AuthServiceBase extends $grpc.Service {
 
   $async.Future<$0.VerifyResetCodeResponse> verifyResetCode(
       $grpc.ServiceCall call, $0.VerifyResetCodeRequest request);
+
+  $async.Future<$0.UploadAvatarResponse> uploadAvatar_Pre(
+      $grpc.ServiceCall $call,
+      $async.Future<$0.UploadAvatarRequest> $request) async {
+    return uploadAvatar($call, await $request);
+  }
+
+  $async.Future<$0.UploadAvatarResponse> uploadAvatar(
+      $grpc.ServiceCall call, $0.UploadAvatarRequest request);
+
+  $async.Future<$0.ChangePasswordResponse> changePassword_Pre(
+      $grpc.ServiceCall $call,
+      $async.Future<$0.ChangePasswordRequest> $request) async {
+    return changePassword($call, await $request);
+  }
+
+  $async.Future<$0.ChangePasswordResponse> changePassword(
+      $grpc.ServiceCall call, $0.ChangePasswordRequest request);
+
+  $async.Future<$0.UpdateUsernameResponse> updateUsername_Pre(
+      $grpc.ServiceCall $call,
+      $async.Future<$0.UpdateUsernameRequest> $request) async {
+    return updateUsername($call, await $request);
+  }
+
+  $async.Future<$0.UpdateUsernameResponse> updateUsername(
+      $grpc.ServiceCall call, $0.UpdateUsernameRequest request);
+
+  $async.Future<$0.SubmitFeedbackResponse> submitFeedback_Pre(
+      $grpc.ServiceCall $call,
+      $async.Future<$0.SubmitFeedbackRequest> $request) async {
+    return submitFeedback($call, await $request);
+  }
+
+  $async.Future<$0.SubmitFeedbackResponse> submitFeedback(
+      $grpc.ServiceCall call, $0.SubmitFeedbackRequest request);
+
+  $async.Future<$0.ListFeedbackAdminResponse> listFeedbackAdmin_Pre(
+      $grpc.ServiceCall $call,
+      $async.Future<$0.ListFeedbackAdminRequest> $request) async {
+    return listFeedbackAdmin($call, await $request);
+  }
+
+  $async.Future<$0.ListFeedbackAdminResponse> listFeedbackAdmin(
+      $grpc.ServiceCall call, $0.ListFeedbackAdminRequest request);
 
   $async.Future<$0.BanUserResponse> banUser_Pre($grpc.ServiceCall $call,
       $async.Future<$0.BanUserRequest> $request) async {

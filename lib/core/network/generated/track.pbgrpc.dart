@@ -112,6 +112,13 @@ class TrackServiceClient extends $grpc.Client {
     return $createUnaryCall(_$getUserPlaylists, request, options: options);
   }
 
+  $grpc.ResponseFuture<$0.PlaylistActionResponse> deletePlaylist(
+    $0.DeletePlaylistRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$deletePlaylist, request, options: options);
+  }
+
   /// — Admin operations
   $grpc.ResponseFuture<$0.SeedTrackResponse> seedTrack(
     $0.SeedTrackRequest request, {
@@ -227,6 +234,11 @@ class TrackServiceClient extends $grpc.Client {
       '/track.TrackService/GetUserPlaylists',
       ($0.GetUserPlaylistsRequest value) => value.writeToBuffer(),
       $0.GetUserPlaylistsResponse.fromBuffer);
+  static final _$deletePlaylist =
+      $grpc.ClientMethod<$0.DeletePlaylistRequest, $0.PlaylistActionResponse>(
+          '/track.TrackService/DeletePlaylist',
+          ($0.DeletePlaylistRequest value) => value.writeToBuffer(),
+          $0.PlaylistActionResponse.fromBuffer);
   static final _$seedTrack =
       $grpc.ClientMethod<$0.SeedTrackRequest, $0.SeedTrackResponse>(
           '/track.TrackService/SeedTrack',
@@ -365,6 +377,15 @@ abstract class TrackServiceBase extends $grpc.Service {
         ($core.List<$core.int> value) =>
             $0.GetUserPlaylistsRequest.fromBuffer(value),
         ($0.GetUserPlaylistsResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.DeletePlaylistRequest,
+            $0.PlaylistActionResponse>(
+        'DeletePlaylist',
+        deletePlaylist_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) =>
+            $0.DeletePlaylistRequest.fromBuffer(value),
+        ($0.PlaylistActionResponse value) => value.writeToBuffer()));
     $addMethod($grpc.ServiceMethod<$0.SeedTrackRequest, $0.SeedTrackResponse>(
         'SeedTrack',
         seedTrack_Pre,
@@ -528,6 +549,15 @@ abstract class TrackServiceBase extends $grpc.Service {
 
   $async.Future<$0.GetUserPlaylistsResponse> getUserPlaylists(
       $grpc.ServiceCall call, $0.GetUserPlaylistsRequest request);
+
+  $async.Future<$0.PlaylistActionResponse> deletePlaylist_Pre(
+      $grpc.ServiceCall $call,
+      $async.Future<$0.DeletePlaylistRequest> $request) async {
+    return deletePlaylist($call, await $request);
+  }
+
+  $async.Future<$0.PlaylistActionResponse> deletePlaylist(
+      $grpc.ServiceCall call, $0.DeletePlaylistRequest request);
 
   $async.Future<$0.SeedTrackResponse> seedTrack_Pre($grpc.ServiceCall $call,
       $async.Future<$0.SeedTrackRequest> $request) async {
