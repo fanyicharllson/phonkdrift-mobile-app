@@ -56,8 +56,10 @@ class _RouterScreenState extends State<RouterScreen> {
 
       _navigateTo(const HomeScreen());
 
-      // Register / refresh FCM token after confirming session is valid.
-      _registerFCMToken();
+      // Re-register FCM token on app resume in case it rotated while logged out.
+      FirebaseMessaging.instance.getToken().then((token) {
+        if (token != null) AuthRepository.instance.updateFCMToken(token);
+      });
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -76,15 +78,6 @@ class _RouterScreenState extends State<RouterScreen> {
             FadeTransition(opacity: anim, child: child),
       ),
     );
-  }
-
-  void _registerFCMToken() {
-    FirebaseMessaging.instance.getToken().then((token) {
-      if (token != null) AuthRepository.instance.updateFCMToken(token);
-    });
-    FirebaseMessaging.instance.onTokenRefresh.listen((token) {
-      AuthRepository.instance.updateFCMToken(token);
-    });
   }
 
   @override

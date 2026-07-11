@@ -1,3 +1,4 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:grpc/grpc.dart';
 import '../../../../core/constants/app_config.dart';
@@ -64,6 +65,9 @@ class AuthRepository {
         expiresAt: res.expiresAt.toInt(),
       );
 
+      // Register FCM token now that we have a valid session.
+      _pushFCMToken(res.userId, res.token);
+
       try {
         final userRes = await _client.auth.getUser(
           GetUserRequest(userId: res.userId),
@@ -103,6 +107,9 @@ class AuthRepository {
           username: '',
           expiresAt: res.expiresAt.toInt(),
         );
+
+        // Register FCM token now that we have a valid session.
+        _pushFCMToken(res.userId, res.token);
 
         // Fetch username after verify too
         try {
@@ -338,16 +345,43 @@ class AuthRepository {
   }
 
   // ── FCM Token ──────────────────────────────────────────────────────────────
-  Future<void> updateFCMToken(String fcmToken) async {
+  /// Called right after login/verify so the token is always registered
+  /// with a fresh, confirmed session. Also wires onTokenRefresh once.
+  void _pushFCMToken(String userId, String authToken) {
+    FirebaseMessaging.instance.getToken().then((fcmToken) {
+      if (fcmToken != null) _sendFCMToken(userId, authToken, fcmToken);
+    });
+    FirebaseMessaging.instance.onTokenRefresh.listen((fcmToken) async {
+      final uid = await _storage.getUserId() ?? '';
+      final tok = await _storage.getToken() ?? '';
+      if (uid.isNotEmpty && tok.isNotEmpty) _sendFCMToken(uid, tok, fcmToken);
+    });
+  }
+
+  Future<void> _sendFCMToken(
+    String userId,
+    String authToken,
+    String fcmToken,
+  ) async {
     try {
-      final userId = await _storage.getUserId() ?? '';
-      final token = await _storage.getToken() ?? '';
-      if (userId.isEmpty || token.isEmpty) return;
       await _client.auth.updateFCMToken(
         UpdateFCMTokenRequest(userId: userId, fcmToken: fcmToken),
-        options: _client.authCallOptions(token),
+        options: _client.authCallOptions(authToken),
       );
-    } catch (_) {}
+      // debugPrint('FCM_TOKN_REGISTERED: $fcmToken');
+    } on GrpcError catch (e) {
+      debugPrint('FCM_TOKEN_ERROR: ${_grpcMessage(e)}');
+    } catch (e) {
+      debugPrint('FCM_TOKEN_ERROR: $e');
+    }
+  }
+
+  /// Public — called from router on app resume (token may have rotated).
+  Future<void> updateFCMToken(String fcmToken) async {
+    final userId = await _storage.getUserId() ?? '';
+    final token = await _storage.getToken() ?? '';
+    if (userId.isEmpty || token.isEmpty) return;
+    await _sendFCMToken(userId, token, fcmToken);
   }
 
   // ── Local helpers ──────────────────────────────────────────────────────────
