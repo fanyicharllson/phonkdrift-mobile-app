@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/network/generated/track.pb.dart';
+import '../../../../core/widgets/phonk_button.dart';
+import '../../../../core/widgets/phonk_error_banner.dart';
 import '../../../../core/widgets/phonk_toast.dart';
 import '../../data/repositories/track_repository.dart';
 import '../controllers/track_controller.dart';
@@ -67,6 +69,25 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
       }
     } catch (e) {
       if (mounted) setState(() { _error = e.toString(); _isLoading = false; });
+    }
+  }
+
+  Future<void> _confirmRemoveTrack(TrackMetadata track) async {
+    final removed = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _RemoveTrackSheet(
+        playlistId: widget.playlistId,
+        track: track,
+      ),
+    );
+    if (removed == true && mounted) {
+      setState(() {
+        _tracks.removeWhere((t) => t.trackId == track.trackId);
+      });
+      PhonkToast.show(context,
+          message: '"${track.title}" removed from playlist.',
+          type: ToastType.success);
     }
   }
 
@@ -254,6 +275,7 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                   ),
                   onLike: () =>
                       widget.controller.toggleLike(_tracks[i].trackId),
+                  onLongPress: () => _confirmRemoveTrack(_tracks[i]),
                 ),
                 childCount: _tracks.length,
               ),
@@ -291,6 +313,7 @@ class _PlaylistTrackTile extends StatelessWidget {
     required this.index,
     required this.onTap,
     required this.onLike,
+    required this.onLongPress,
     this.isPlaying = false,
     this.isLiked = false,
   });
@@ -299,6 +322,7 @@ class _PlaylistTrackTile extends StatelessWidget {
   final int index;
   final VoidCallback onTap;
   final VoidCallback onLike;
+  final VoidCallback onLongPress;
   final bool isPlaying;
   final bool isLiked;
 
@@ -306,6 +330,10 @@ class _PlaylistTrackTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
+      onLongPress: () {
+        HapticFeedback.mediumImpact();
+        onLongPress();
+      },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         padding: const EdgeInsets.all(12),
@@ -389,6 +417,128 @@ class _PlaylistTrackTile extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── Remove Track Confirmation Sheet ──────────────────────────────────────────────
+class _RemoveTrackSheet extends StatefulWidget {
+  const _RemoveTrackSheet({required this.playlistId, required this.track});
+  final String playlistId;
+  final TrackMetadata track;
+
+  @override
+  State<_RemoveTrackSheet> createState() => _RemoveTrackSheetState();
+}
+
+class _RemoveTrackSheetState extends State<_RemoveTrackSheet> {
+  bool _isRemoving = false;
+  String _error = '';
+
+  Future<void> _remove() async {
+    setState(() {
+      _isRemoving = true;
+      _error = '';
+    });
+    try {
+      final success = await TrackRepository.instance.removeTrackFromPlaylist(
+        playlistId: widget.playlistId,
+        trackId: widget.track.trackId,
+      );
+      if (!mounted) return;
+      if (success) {
+        Navigator.pop(context, true);
+      } else {
+        setState(() {
+          _isRemoving = false;
+          _error = 'Could not remove track. Try again.';
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isRemoving = false;
+          _error = e.toString().replaceAll('TrackException: ', '');
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.bgSurface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 36,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.borderSubtle,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: AppColors.phonkRed.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.playlist_remove_rounded,
+              color: AppColors.phonkRed,
+              size: 28,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Remove track?',
+            style: GoogleFonts.inter(
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '"${widget.track.title}" will be removed from this playlist.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: AppColors.textSecondary,
+              height: 1.5,
+            ),
+          ),
+          if (_error.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            PhonkErrorBanner(
+              message: _error,
+              onDismiss: () => setState(() => _error = ''),
+            ),
+          ],
+          const SizedBox(height: 24),
+          PhonkButton(
+            label: 'Remove from Playlist',
+            onPressed: _isRemoving ? null : _remove,
+            isLoading: _isRemoving,
+          ),
+          const SizedBox(height: 12),
+          PhonkButton(
+            label: 'Cancel',
+            onPressed: _isRemoving
+                ? null
+                : () => Navigator.pop(context, false),
+            variant: PhonkButtonVariant.ghost,
+          ),
+        ],
       ),
     );
   }

@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/network/generated/track.pb.dart';
+import '../../../../core/widgets/phonk_button.dart';
+import '../../../../core/widgets/phonk_error_banner.dart';
 import '../../../../core/widgets/phonk_toast.dart';
 import '../../data/repositories/track_repository.dart';
 import '../controllers/track_controller.dart';
@@ -19,7 +21,12 @@ class LibraryScreen extends StatefulWidget {
 }
 
 class _LibraryScreenState extends State<LibraryScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+  // Keeps this tab's fetched liked-tracks/playlists alive when the PageView
+  // scrolls it out of the cache range, instead of disposing and refetching.
+  @override
+  bool get wantKeepAlive => true;
+
   late TabController _tabController;
 
   // Liked tracks
@@ -106,8 +113,25 @@ class _LibraryScreenState extends State<LibraryScreen>
     }
   }
 
+  Future<void> _confirmDeletePlaylist(PlaylistSummary playlist) async {
+    final deleted = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _DeletePlaylistSheet(playlist: playlist),
+    );
+    if (deleted == true && mounted) {
+      setState(() {
+        _playlists.removeWhere((p) => p.playlistId == playlist.playlistId);
+      });
+      PhonkToast.show(context,
+          message: 'Playlist "${playlist.name}" deleted.',
+          type: ToastType.success);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       backgroundColor: AppColors.bgDeep,
       body: Stack(
@@ -270,6 +294,7 @@ class _LibraryScreenState extends State<LibraryScreen>
                         controller: widget.controller,
                         onRetry: _loadPlaylists,
                         onCreatePlaylist: _showCreatePlaylist,
+                        onDeletePlaylist: _confirmDeletePlaylist,
                       ),
                     ],
                   ),
@@ -390,6 +415,7 @@ class _PlaylistsTab extends StatelessWidget {
     required this.controller,
     required this.onRetry,
     required this.onCreatePlaylist,
+    required this.onDeletePlaylist,
   });
 
   final List<PlaylistSummary> playlists;
@@ -398,6 +424,7 @@ class _PlaylistsTab extends StatelessWidget {
   final TrackController controller;
   final VoidCallback onRetry;
   final VoidCallback onCreatePlaylist;
+  final void Function(PlaylistSummary) onDeletePlaylist;
 
   @override
   Widget build(BuildContext context) {
@@ -455,6 +482,7 @@ class _PlaylistsTab extends StatelessWidget {
               ),
             ),
           ),
+          onLongPress: () => onDeletePlaylist(playlist),
         );
       },
     );
@@ -570,14 +598,23 @@ class _LibraryTrackTile extends StatelessWidget {
 
 
 class _PlaylistCard extends StatelessWidget {
-  const _PlaylistCard({required this.playlist, required this.onTap});
+  const _PlaylistCard({
+    required this.playlist,
+    required this.onTap,
+    required this.onLongPress,
+  });
   final PlaylistSummary playlist;
   final VoidCallback onTap;
+  final VoidCallback onLongPress;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
+      onLongPress: () {
+        HapticFeedback.mediumImpact();
+        onLongPress();
+      },
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.bgSurface,
@@ -686,6 +723,130 @@ class _CreatePlaylistCard extends StatelessWidget {
                 )),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── Delete Playlist Confirmation Sheet ───────────────────────────────────────────
+class _DeletePlaylistSheet extends StatefulWidget {
+  const _DeletePlaylistSheet({required this.playlist});
+  final PlaylistSummary playlist;
+
+  @override
+  State<_DeletePlaylistSheet> createState() => _DeletePlaylistSheetState();
+}
+
+class _DeletePlaylistSheetState extends State<_DeletePlaylistSheet> {
+  bool _isDeleting = false;
+  String _error = '';
+
+  Future<void> _delete() async {
+    setState(() {
+      _isDeleting = true;
+      _error = '';
+    });
+    try {
+      final success = await TrackRepository.instance.deletePlaylist(
+        widget.playlist.playlistId,
+      );
+      if (!mounted) return;
+      if (success) {
+        Navigator.pop(context, true);
+      } else {
+        setState(() {
+          _isDeleting = false;
+          _error = 'Could not delete playlist. Try again.';
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isDeleting = false;
+          _error = e.toString().replaceAll('TrackException: ', '');
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final trackCount = widget.playlist.trackCount;
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.bgSurface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 36,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.borderSubtle,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: AppColors.phonkRed.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.delete_outline_rounded,
+              color: AppColors.phonkRed,
+              size: 28,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Delete "${widget.playlist.name}"?',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            trackCount > 0
+                ? 'This playlist and its $trackCount track${trackCount == 1 ? '' : 's'} will be permanently removed. This cannot be undone.'
+                : 'This playlist will be permanently removed. This cannot be undone.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: AppColors.textSecondary,
+              height: 1.5,
+            ),
+          ),
+          if (_error.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            PhonkErrorBanner(
+              message: _error,
+              onDismiss: () => setState(() => _error = ''),
+            ),
+          ],
+          const SizedBox(height: 24),
+          PhonkButton(
+            label: 'Delete Playlist',
+            onPressed: _isDeleting ? null : _delete,
+            isLoading: _isDeleting,
+          ),
+          const SizedBox(height: 12),
+          PhonkButton(
+            label: 'Cancel',
+            onPressed: _isDeleting
+                ? null
+                : () => Navigator.pop(context, false),
+            variant: PhonkButtonVariant.ghost,
+          ),
+        ],
       ),
     );
   }

@@ -98,6 +98,14 @@ class TrackServiceClient extends $grpc.Client {
     return $createUnaryCall(_$addToPlaylist, request, options: options);
   }
 
+  $grpc.ResponseFuture<$0.PlaylistActionResponse> removeTrackFromPlaylist(
+    $0.PlaylistTrackRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$removeTrackFromPlaylist, request,
+        options: options);
+  }
+
   $grpc.ResponseFuture<$0.GetPlaylistResponse> getPlaylist(
     $0.GetPlaylistRequest request, {
     $grpc.CallOptions? options,
@@ -222,6 +230,11 @@ class TrackServiceClient extends $grpc.Client {
   static final _$addToPlaylist =
       $grpc.ClientMethod<$0.PlaylistTrackRequest, $0.PlaylistActionResponse>(
           '/track.TrackService/AddToPlaylist',
+          ($0.PlaylistTrackRequest value) => value.writeToBuffer(),
+          $0.PlaylistActionResponse.fromBuffer);
+  static final _$removeTrackFromPlaylist =
+      $grpc.ClientMethod<$0.PlaylistTrackRequest, $0.PlaylistActionResponse>(
+          '/track.TrackService/RemoveTrackFromPlaylist',
           ($0.PlaylistTrackRequest value) => value.writeToBuffer(),
           $0.PlaylistActionResponse.fromBuffer);
   static final _$getPlaylist =
@@ -354,6 +367,15 @@ abstract class TrackServiceBase extends $grpc.Service {
         $grpc.ServiceMethod<$0.PlaylistTrackRequest, $0.PlaylistActionResponse>(
             'AddToPlaylist',
             addToPlaylist_Pre,
+            false,
+            false,
+            ($core.List<$core.int> value) =>
+                $0.PlaylistTrackRequest.fromBuffer(value),
+            ($0.PlaylistActionResponse value) => value.writeToBuffer()));
+    $addMethod(
+        $grpc.ServiceMethod<$0.PlaylistTrackRequest, $0.PlaylistActionResponse>(
+            'RemoveTrackFromPlaylist',
+            removeTrackFromPlaylist_Pre,
             false,
             false,
             ($core.List<$core.int> value) =>
@@ -531,6 +553,15 @@ abstract class TrackServiceBase extends $grpc.Service {
   }
 
   $async.Future<$0.PlaylistActionResponse> addToPlaylist(
+      $grpc.ServiceCall call, $0.PlaylistTrackRequest request);
+
+  $async.Future<$0.PlaylistActionResponse> removeTrackFromPlaylist_Pre(
+      $grpc.ServiceCall $call,
+      $async.Future<$0.PlaylistTrackRequest> $request) async {
+    return removeTrackFromPlaylist($call, await $request);
+  }
+
+  $async.Future<$0.PlaylistActionResponse> removeTrackFromPlaylist(
       $grpc.ServiceCall call, $0.PlaylistTrackRequest request);
 
   $async.Future<$0.GetPlaylistResponse> getPlaylist_Pre($grpc.ServiceCall $call,

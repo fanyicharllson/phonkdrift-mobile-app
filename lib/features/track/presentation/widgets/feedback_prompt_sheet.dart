@@ -12,6 +12,7 @@ Future<void> showFeedbackPromptSheet(BuildContext context) {
     backgroundColor: Colors.transparent,
     isDismissible: true,
     enableDrag: true,
+    isScrollControlled: true,
     builder: (_) => const _FeedbackPromptSheet(),
   );
 }
@@ -64,29 +65,38 @@ class _FeedbackPromptSheetState extends State<_FeedbackPromptSheet> {
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom + 16,
       ),
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppColors.bgSurface,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppColors.phonkRed.withValues(alpha: 0.25)),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.phonkRed.withValues(alpha: 0.15),
-              blurRadius: 30,
-              offset: const Offset(0, 10),
-            ),
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.5),
-              blurRadius: 24,
-              offset: const Offset(0, 8),
-            ),
-          ],
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
         ),
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 280),
-          child: _submitted ? _buildThankYou() : _buildForm(),
+        child: SingleChildScrollView(
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.bgSurface,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: AppColors.phonkRed.withValues(alpha: 0.25),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.phonkRed.withValues(alpha: 0.15),
+                  blurRadius: 30,
+                  offset: const Offset(0, 10),
+                ),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 280),
+              child: _submitted ? _buildThankYou() : _buildForm(),
+            ),
+          ),
         ),
       ),
     );

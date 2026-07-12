@@ -21,7 +21,13 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends State<ProfileScreen>
+    with AutomaticKeepAliveClientMixin {
+  // Keeps this tab's fetched profile alive when the PageView scrolls it
+  // out of the cache range, instead of disposing and refetching every time.
+  @override
+  bool get wantKeepAlive => true;
+
   // User data
   String _username = '';
   String _email = '';
@@ -170,6 +176,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _openChangePhonkLevel() {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _PhonkLevelSheet(
         currentLevel: _phonkLevel,
@@ -196,6 +203,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return PopScope(
       canPop: !_isUploadingAvatar,
       onPopInvokedWithResult: (didPop, _) async {

@@ -287,6 +287,43 @@ class TrackRepository {
     }
   }
 
+  // ── Remove track from playlist ─────────────────────────────────────────────
+  Future<bool> removeTrackFromPlaylist({
+    required String playlistId,
+    required String trackId,
+  }) async {
+    try {
+      final userId = await _storage.getUserId() ?? '';
+      final options = await _authOptions();
+      final res = await _client.track.removeTrackFromPlaylist(
+        PlaylistTrackRequest(
+          playlistId: playlistId,
+          trackId: trackId,
+          userId: userId,
+        ),
+        options: options,
+      );
+      return res.success;
+    } on GrpcError catch (e) {
+      throw TrackException(_grpcMessage(e));
+    }
+  }
+
+  // ── Delete playlist ─────────────────────────────────────────────────────────
+  Future<bool> deletePlaylist(String playlistId) async {
+    try {
+      final userId = await _storage.getUserId() ?? '';
+      final options = await _authOptions();
+      final res = await _client.track.deletePlaylist(
+        DeletePlaylistRequest(playlistId: playlistId, userId: userId),
+        options: options,
+      );
+      return res.success;
+    } on GrpcError catch (e) {
+      throw TrackException(_grpcMessage(e));
+    }
+  }
+
   String _grpcMessage(GrpcError e) =>
       e.message?.isNotEmpty == true ? e.message! : 'Something went wrong';
 }

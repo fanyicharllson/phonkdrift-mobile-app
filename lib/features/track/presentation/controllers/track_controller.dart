@@ -7,14 +7,12 @@ import '../../../auth/data/repositories/auth_repository.dart';
 import '../../../auth/presentation/screens/banned_screen.dart';
 import '../../../../core/navigation/app_navigator.dart';
 import '../../../../core/network/generated/track.pb.dart';
-import '../../../../core/utils/storage_helper.dart';
 import '../../data/repositories/track_repository.dart';
 
 enum TrackLoadState { idle, loading, loaded, error }
 
 class TrackController extends ChangeNotifier {
   final _repo = TrackRepository.instance;
-  final _storage = StorageHelper.instance;
   final _player = AudioPlayer();
   final Set<String> _likedTrackIds = {};
   Set<String> get likedTrackIds => _likedTrackIds;
@@ -75,27 +73,25 @@ class TrackController extends ChangeNotifier {
   bool get hasNext => _queueIndex >= 0 && _queueIndex + 1 < _queue.length;
   bool get hasPrevious => _queueIndex > 0;
 
-  // ── Feedback prompt (shown once, after some real listening) ────────────────
-  static const _feedbackThresholdSeconds = 90;
+  // ── Feedback prompt (recurring — asked again every so often, not just once,
+  // so we actually keep collecting feedback from active listeners) ──────────
+  static const _feedbackFirstPromptSeconds = 90;
+  static const _feedbackRepeatIntervalSeconds = 600; // ~10 min between asks
   int _cumulativeListenSeconds = 0;
-  bool _hasPromptedFeedback = false;
+  int _nextFeedbackPromptThreshold = _feedbackFirstPromptSeconds;
   bool _feedbackEligible = false;
 
-  bool get shouldPromptFeedback => _feedbackEligible && !_hasPromptedFeedback;
+  bool get shouldPromptFeedback => _feedbackEligible;
 
   void markFeedbackPrompted() {
-    _hasPromptedFeedback = true;
-    _storage.markFeedbackPrompted();
+    _feedbackEligible = false;
+    _nextFeedbackPromptThreshold =
+        _cumulativeListenSeconds + _feedbackRepeatIntervalSeconds;
   }
 
   TrackController() {
     _initAudioSession();
     _listenToPlayer();
-    _loadFeedbackPromptState();
-  }
-
-  Future<void> _loadFeedbackPromptState() async {
-    _hasPromptedFeedback = await _storage.hasSeenFeedbackPrompt();
   }
 
   // ── Audio session (handles interruptions) ─────────────────────────────────
@@ -168,9 +164,9 @@ class TrackController extends ChangeNotifier {
           isCompleted: false,
         );
 
-        if (!_hasPromptedFeedback && !_feedbackEligible) {
+        if (!_feedbackEligible) {
           _cumulativeListenSeconds += 30;
-          if (_cumulativeListenSeconds >= _feedbackThresholdSeconds) {
+          if (_cumulativeListenSeconds >= _nextFeedbackPromptThreshold) {
             _feedbackEligible = true;
             notifyListeners();
           }
