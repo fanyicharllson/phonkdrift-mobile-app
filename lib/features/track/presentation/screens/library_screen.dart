@@ -456,7 +456,30 @@ class _PlaylistsTab extends StatelessWidget {
       );
     }
 
-    return GridView.builder(
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.info_outline_rounded,
+                size: 13,
+                color: AppColors.textMuted,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Long-press a playlist to delete it',
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  color: AppColors.textMuted,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: GridView.builder(
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 160),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -485,6 +508,9 @@ class _PlaylistsTab extends StatelessWidget {
           onLongPress: () => onDeletePlaylist(playlist),
         );
       },
+          ),
+        ),
+      ],
     );
   }
 }

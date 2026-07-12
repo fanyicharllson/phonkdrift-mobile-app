@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:lottie/lottie.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -212,7 +213,9 @@ class _PlayerScreenState extends State<PlayerScreen>
           ),
 
           SafeArea(
-            child: Column(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Column(
               children: [
                 // Top bar
                 Padding(
@@ -394,7 +397,21 @@ class _PlayerScreenState extends State<PlayerScreen>
                   ),
                 ),
 
-                const SizedBox(height: 36),
+                const SizedBox(height: 20),
+
+                // Waveform visualizer — plays only while audio is playing
+                SizedBox(
+                  height: 56,
+                  width: double.infinity,
+                  child: Lottie.asset(
+                    'assets/lottie/music_wave.json',
+                    fit: BoxFit.fitWidth,
+                    repeat: true,
+                    animate: widget.controller.isPlaying,
+                  ),
+                ),
+
+                const SizedBox(height: 8),
 
                 // Progress slider
                 Padding(
@@ -545,7 +562,60 @@ class _PlayerScreenState extends State<PlayerScreen>
                   ),
                 ),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: 20),
+
+                // Repeat toggle
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    widget.controller.toggleRepeat();
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: widget.controller.isRepeatOne
+                          ? AppColors.phonkRed.withValues(alpha: 0.15)
+                          : AppColors.bgSurface,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: widget.controller.isRepeatOne
+                            ? AppColors.phonkRed
+                            : AppColors.borderSubtle,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.repeat_one_rounded,
+                          size: 16,
+                          color: widget.controller.isRepeatOne
+                              ? AppColors.phonkRed
+                              : AppColors.textMuted,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          widget.controller.isRepeatOne
+                              ? 'Repeat On'
+                              : 'Repeat Off',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: widget.controller.isRepeatOne
+                                ? AppColors.phonkRed
+                                : AppColors.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
 
                 // Stats row
                 Padding(
@@ -570,6 +640,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                   ),
                 ),
               ],
+            ),
             ),
           ),
         ],

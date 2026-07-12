@@ -259,7 +259,23 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                     )),
               ),
             )
-          else
+          else ...[
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline_rounded,
+                        size: 13, color: AppColors.textMuted),
+                    const SizedBox(width: 6),
+                    Text('Long-press a track to remove it',
+                        style: GoogleFonts.inter(
+                          fontSize: 11, color: AppColors.textMuted,
+                        )),
+                  ],
+                ),
+              ),
+            ),
             SliverList(
               delegate: SliverChildBuilderDelegate(
                 (_, i) => _PlaylistTrackTile(
@@ -280,6 +296,7 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                 childCount: _tracks.length,
               ),
             ),
+          ],
 
           const SliverToBoxAdapter(child: SizedBox(height: 160)),
         ],

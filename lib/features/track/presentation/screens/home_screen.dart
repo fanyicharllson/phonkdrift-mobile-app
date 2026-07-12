@@ -65,6 +65,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         );
       },
     );
+
+    // Catch a push that was tapped while the app was fully killed — it fires
+    // via getInitialMessage before this screen (and the listener above)
+    // exists, so the live stream above alone would miss it.
+    if (PushNotificationService.instance.consumePendingTrending() != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => TrendingScreen(controller: _controller),
+          ),
+        );
+      });
+    }
   }
 
   // Covers reopening the app via the now-playing notification, since Android

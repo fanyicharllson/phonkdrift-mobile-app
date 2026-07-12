@@ -73,6 +73,15 @@ class TrackController extends ChangeNotifier {
   bool get hasNext => _queueIndex >= 0 && _queueIndex + 1 < _queue.length;
   bool get hasPrevious => _queueIndex > 0;
 
+  // ── Repeat one ──────────────────────────────────────────────────────────────
+  bool _repeatOne = false;
+  bool get isRepeatOne => _repeatOne;
+
+  void toggleRepeat() {
+    _repeatOne = !_repeatOne;
+    notifyListeners();
+  }
+
   // ── Feedback prompt (recurring — asked again every so often, not just once,
   // so we actually keep collecting feedback from active listeners) ──────────
   static const _feedbackFirstPromptSeconds = 90;
@@ -192,6 +201,14 @@ class TrackController extends ChangeNotifier {
     notifyListeners();
     // Reload recently played after completion
     loadRecentlyPlayed();
+
+    if (_repeatOne && _nowPlaying != null) {
+      _player.seek(Duration.zero);
+      _player.play();
+      _isPlaying = true;
+      notifyListeners();
+      return;
+    }
 
     if (hasNext) {
       playNext();
