@@ -2,7 +2,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lottie/lottie.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -11,6 +10,7 @@ import '../../../../core/widgets/phonk_toast.dart';
 import '../controllers/track_controller.dart';
 import '../widgets/add_to_playlist_sheet.dart';
 import '../widgets/play_pause_button.dart';
+import '../widgets/waveform_seek_bar.dart';
 
 class PlayerScreen extends StatefulWidget {
   const PlayerScreen({super.key, required this.controller});
@@ -397,55 +397,27 @@ class _PlayerScreenState extends State<PlayerScreen>
                   ),
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 28),
 
-                // Waveform visualizer — plays only while audio is playing
-                SizedBox(
-                  height: 56,
-                  width: double.infinity,
-                  child: Lottie.asset(
-                    'assets/lottie/music_wave.json',
-                    fit: BoxFit.fitWidth,
-                    repeat: true,
-                    animate: widget.controller.isPlaying,
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                // Progress slider
+                // Waveform scrubber — the bars themselves are the seek bar
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 28),
                   child: Column(
                     children: [
-                      SliderTheme(
-                        data: SliderTheme.of(context).copyWith(
-                          trackHeight: 3,
-                          thumbShape: const RoundSliderThumbShape(
-                            enabledThumbRadius: 6,
-                          ),
-                          overlayShape: const RoundSliderOverlayShape(
-                            overlayRadius: 16,
-                          ),
-                          activeTrackColor: AppColors.phonkRed,
-                          inactiveTrackColor: AppColors.borderSubtle,
-                          thumbColor: AppColors.phonkRed,
-                          overlayColor: AppColors.phonkRed.withValues(
-                            alpha: 0.2,
-                          ),
-                        ),
-                        child: Slider(
-                          value: progress,
-                          onChanged: (val) {
-                            final pos = Duration(
-                              seconds:
-                                  (val * widget.controller.duration.inSeconds)
-                                      .round(),
-                            );
-                            widget.controller.seekTo(pos);
-                          },
-                        ),
+                      WaveformSeekBar(
+                        trackId: track.trackId,
+                        progress: progress,
+                        isPlaying: widget.controller.isPlaying,
+                        onSeek: (fraction) {
+                          final pos = Duration(
+                            seconds:
+                                (fraction * widget.controller.duration.inSeconds)
+                                    .round(),
+                          );
+                          widget.controller.seekTo(pos);
+                        },
                       ),
+                      const SizedBox(height: 6),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                         child: Row(
