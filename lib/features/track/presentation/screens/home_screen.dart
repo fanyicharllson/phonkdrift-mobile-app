@@ -23,6 +23,9 @@ import '../widgets/app_sidebar.dart';
 import '../widgets/feedback_prompt_sheet.dart';
 import '../widgets/play_pause_button.dart';
 import '../widgets/playing_equalizer.dart';
+import '../../../community/presentation/screens/community_onboarding_screen.dart';
+import '../../../community/presentation/screens/community_chat_screen.dart';
+import '../../../community/data/repositories/community_repository.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -40,6 +43,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   StreamSubscription<TrendingPushPayload>? _trendingPushSub;
   bool _isPlayerScreenOpen = false;
 
+  bool? _isCommunityMember;
+
   String _phonkLevel = '';
   String _username = '';
   String _avatarUrl = '';
@@ -55,16 +60,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _controller.addListener(_onControllerUpdate);
     _searchCtrl.addListener(_onSearchChanged);
     _loadData();
-    _trendingPushSub = PushNotificationService.instance.onTrendingPush.listen(
-      (payload) {
-        if (!mounted) return;
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => TrendingScreen(controller: _controller),
-          ),
-        );
-      },
-    );
+    _trendingPushSub = PushNotificationService.instance.onTrendingPush.listen((
+      payload,
+    ) {
+      if (!mounted) return;
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => TrendingScreen(controller: _controller),
+        ),
+      );
+    });
 
     // Catch a push that was tapped while the app was fully killed — it fires
     // via getInitialMessage before this screen (and the listener above)
@@ -132,6 +137,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       });
     }
     await _controller.loadHomeData();
+
+    try {
+      final isMember = await CommunityRepository.instance.isMember();
+      if (mounted) setState(() => _isCommunityMember = isMember);
+    } catch (_) {
+      if (mounted) setState(() => _isCommunityMember = false);
+    }
   }
 
   Widget _headerAvatarFallback() {
@@ -219,7 +231,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             children: [
               _buildHomePage(),
               SearchScreen(controller: _controller),
-              _buildPlaceholderPage('Community coming soon'),
+              _buildCommunityPage(),
               LibraryScreen(controller: _controller),
               const ProfileScreen(),
             ],
@@ -279,22 +291,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             _buildRecentlyPlayed(),
             const SliverToBoxAdapter(child: SizedBox(height: 180)),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPlaceholderPage(String message) {
-    return Scaffold(
-      backgroundColor: AppColors.bgDeep,
-      body: Center(
-        child: Text(
-          message,
-          style: GoogleFonts.inter(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textSecondary,
-          ),
         ),
       ),
     );
@@ -394,7 +390,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         ? CachedNetworkImage(
                             imageUrl: _avatarUrl,
                             fit: BoxFit.cover,
-                            errorWidget: (_, __, ___) => _headerAvatarFallback(),
+                            errorWidget: (_, __, ___) =>
+                                _headerAvatarFallback(),
                           )
                         : _headerAvatarFallback(),
                   ),
@@ -925,6 +922,21 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     return '$m:$s';
   }
 
+  Widget _buildCommunityPage() {
+    if (_isCommunityMember == null) {
+      return const Center(
+        child: CircularProgressIndicator(
+          color: AppColors.phonkRed,
+          strokeWidth: 2,
+        ),
+      );
+    }
+    if (_isCommunityMember == true) {
+      return const CommunityChatScreen();
+    }
+    return const CommunityOnboardingScreen();
+  }
+
   // ── Floating nav — sliding indicator, always-on labels ─────────────────────
   Widget _buildFloatingNav() {
     const tabs = [
@@ -1146,7 +1158,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 }
-
 
 // ── Smart Error Tile ──────────────────────────────────────────────────────────
 class _SmartErrorTile extends StatelessWidget {

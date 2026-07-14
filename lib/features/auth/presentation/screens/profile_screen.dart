@@ -1491,11 +1491,12 @@ class _FeedbackSheetState extends State<_FeedbackSheet> {
         type: ToastType.success,
       );
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _isLoading = false;
           _error = 'Failed to send feedback.';
         });
+      }
     }
   }
 
