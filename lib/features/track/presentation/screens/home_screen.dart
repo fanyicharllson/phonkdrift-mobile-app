@@ -23,9 +23,7 @@ import '../widgets/app_sidebar.dart';
 import '../widgets/feedback_prompt_sheet.dart';
 import '../widgets/play_pause_button.dart';
 import '../widgets/playing_equalizer.dart';
-import '../../../community/presentation/screens/community_onboarding_screen.dart';
-import '../../../community/presentation/screens/community_chat_screen.dart';
-import '../../../community/data/repositories/community_repository.dart';
+import '../../../community/presentation/widgets/community_gate.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -42,8 +40,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Timer? _searchDebounce;
   StreamSubscription<TrendingPushPayload>? _trendingPushSub;
   bool _isPlayerScreenOpen = false;
-
-  bool? _isCommunityMember;
 
   String _phonkLevel = '';
   String _username = '';
@@ -137,13 +133,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       });
     }
     await _controller.loadHomeData();
-
-    try {
-      final isMember = await CommunityRepository.instance.isMember();
-      if (mounted) setState(() => _isCommunityMember = isMember);
-    } catch (_) {
-      if (mounted) setState(() => _isCommunityMember = false);
-    }
   }
 
   Widget _headerAvatarFallback() {
@@ -231,7 +220,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             children: [
               _buildHomePage(),
               SearchScreen(controller: _controller),
-              _buildCommunityPage(),
+              const CommunityGate(),
               LibraryScreen(controller: _controller),
               const ProfileScreen(),
             ],
@@ -920,21 +909,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
     final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
     return '$m:$s';
-  }
-
-  Widget _buildCommunityPage() {
-    if (_isCommunityMember == null) {
-      return const Center(
-        child: CircularProgressIndicator(
-          color: AppColors.phonkRed,
-          strokeWidth: 2,
-        ),
-      );
-    }
-    if (_isCommunityMember == true) {
-      return const CommunityChatScreen();
-    }
-    return const CommunityOnboardingScreen();
   }
 
   // ── Floating nav — sliding indicator, always-on labels ─────────────────────

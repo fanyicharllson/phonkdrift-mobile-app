@@ -1,3 +1,4 @@
+import 'package:fixnum/fixnum.dart';
 import 'package:grpc/grpc.dart';
 import '../../../../core/network/grpc_client.dart';
 import '../../../../core/network/generated/chat.pb.dart';
@@ -69,7 +70,7 @@ class CommunityRepository {
   }
 
   Future<List<ChatMessage>> getMessages({
-    int64 beforeTimestamp = 0,
+    Int64? beforeTimestamp,
     int limit = 30,
   }) async {
     try {

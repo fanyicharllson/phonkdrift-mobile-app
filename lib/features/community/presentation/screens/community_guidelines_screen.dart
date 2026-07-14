@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
-import 'community_chat_screen.dart';
 
 class CommunityGuidelinesScreen extends StatefulWidget {
   const CommunityGuidelinesScreen({super.key});
@@ -40,20 +39,10 @@ class _CommunityGuidelinesScreenState
 
   void _enter() {
     HapticFeedback.mediumImpact();
-    Navigator.of(context).pushAndRemoveUntil(
-      PageRouteBuilder(
-        pageBuilder: (_, __, ___) => const CommunityChatScreen(),
-        transitionsBuilder: (_, anim, __, child) => SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(1, 0),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
-          child: child,
-        ),
-        transitionDuration: const Duration(milliseconds: 400),
-      ),
-      (_) => false,
-    );
+    // Pop back to whoever pushed us (CommunityOnboardingScreen) with a
+    // result — no stack-wiping, so the app's Home screen stays alive
+    // underneath and the mini player keeps playing.
+    Navigator.of(context).pop(true);
   }
 
   static const _rules = [

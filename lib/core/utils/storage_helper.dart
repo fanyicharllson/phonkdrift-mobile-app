@@ -32,6 +32,12 @@ class StorageHelper {
   Future<void> markOnboardingSeen() =>
       _storage.write(key: AppConfig.keyOnboardingSeen, value: 'true');
 
+  /// Set only when the user has actually completed joining the community at
+  /// least once — not just viewed the onboarding screen. Drives whether a
+  /// returning-but-left user sees the full pitch again or a quick rejoin.
+  Future<void> markCommunityJoinedBefore() =>
+      _storage.write(key: AppConfig.keyCommunityJoinedBefore, value: 'true');
+
   Future<void> saveSession({
     required String token,
     required String userId,
@@ -63,6 +69,15 @@ class StorageHelper {
   Future<bool> hasSeenOnboarding() async {
     try {
       final val = await _storage.read(key: AppConfig.keyOnboardingSeen);
+      return val == 'true';
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> hasJoinedCommunityBefore() async {
+    try {
+      final val = await _storage.read(key: AppConfig.keyCommunityJoinedBefore);
       return val == 'true';
     } catch (_) {
       return false;

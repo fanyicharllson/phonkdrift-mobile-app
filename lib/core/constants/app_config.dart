@@ -19,6 +19,7 @@ class AppConfig {
   static const String keyPhonkLevel = 'pd_phonk_level';
   static const String keyPendingVerifyEmail = 'pd_pending_email';
   static const String keyOnboardingSeen = 'pd_onboarding_seen';
+  static const String keyCommunityJoinedBefore = 'pd_community_joined_before';
 
   // === gRPC TIMEOUTS ===
   static const Duration grpcConnectTimeout = Duration(seconds: 10);

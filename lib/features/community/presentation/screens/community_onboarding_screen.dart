@@ -2,20 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/utils/storage_helper.dart';
 import '../../../../core/widgets/phonk_toast.dart';
 import '../../data/repositories/community_repository.dart';
 import 'community_guidelines_screen.dart';
 
 class CommunityOnboardingScreen extends StatefulWidget {
-  const CommunityOnboardingScreen({super.key});
+  const CommunityOnboardingScreen({super.key, required this.onJoined});
+
+  /// Called once the user has joined AND accepted the guidelines — the host
+  /// (CommunityGate) uses this to switch straight to the chat screen.
+  final VoidCallback onJoined;
 
   @override
   State<CommunityOnboardingScreen> createState() =>
       _CommunityOnboardingScreenState();
 }
 
-class _CommunityOnboardingScreenState
-    extends State<CommunityOnboardingScreen>
+class _CommunityOnboardingScreenState extends State<CommunityOnboardingScreen>
     with TickerProviderStateMixin {
   late AnimationController _pulseController;
   late AnimationController _fadeController;
@@ -61,23 +65,35 @@ class _CommunityOnboardingScreenState
 
     try {
       await CommunityRepository.instance.joinCommunity();
+      // Joined for real — a later leave should show the quick rejoin prompt,
+      // never this full pitch again.
+      await StorageHelper.instance.markCommunityJoinedBefore();
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(
+
+      final agreed = await Navigator.of(context).push<bool>(
         PageRouteBuilder(
-          pageBuilder: (_, __, ___) =>
-              const CommunityGuidelinesScreen(),
-          transitionsBuilder: (_, anim, __, child) => FadeTransition(
-            opacity: anim, child: child,
-          ),
+          pageBuilder: (_, __, ___) => const CommunityGuidelinesScreen(),
+          transitionsBuilder: (_, anim, __, child) =>
+              FadeTransition(opacity: anim, child: child),
           transitionDuration: const Duration(milliseconds: 400),
         ),
       );
+
+      if (!mounted) return;
+      if (agreed == true) {
+        widget.onJoined();
+      } else {
+        // Backed out of guidelines without agreeing — stay on this screen.
+        setState(() => _isLoading = false);
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        PhonkToast.show(context,
-            message: e.toString().replaceAll('CommunityException: ', ''),
-            type: ToastType.error);
+        PhonkToast.show(
+          context,
+          message: e.toString().replaceAll('CommunityException: ', ''),
+          type: ToastType.error,
+        );
       }
     }
   }
@@ -97,13 +113,17 @@ class _CommunityOnboardingScreenState
         children: [
           // Animated background orbs
           _AnimatedOrb(
-            top: -80, right: -80,
-            color: AppColors.phonkRed, size: 300,
+            top: -80,
+            right: -80,
+            color: AppColors.phonkRed,
+            size: 300,
             opacity: 0.12,
           ),
           _AnimatedOrb(
-            bottom: -60, left: -60,
-            color: const Color(0xFF6B00FF), size: 250,
+            bottom: -60,
+            left: -60,
+            color: const Color(0xFF6B00FF),
+            size: 250,
             opacity: 0.1,
           ),
 
@@ -120,7 +140,8 @@ class _CommunityOnboardingScreenState
                     ScaleTransition(
                       scale: _pulse,
                       child: Container(
-                        width: 120, height: 120,
+                        width: 120,
+                        height: 120,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           gradient: LinearGradient(
@@ -181,7 +202,9 @@ class _CommunityOnboardingScreenState
                     if (_memberCount > 0)
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 12),
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.bgSurface,
                           borderRadius: BorderRadius.circular(14),
@@ -191,7 +214,8 @@ class _CommunityOnboardingScreenState
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Container(
-                              width: 8, height: 8,
+                              width: 8,
+                              height: 8,
                               decoration: const BoxDecoration(
                                 color: AppColors.phonkRed,
                                 shape: BoxShape.circle,
@@ -242,7 +266,8 @@ class _CommunityOnboardingScreenState
                     Text(
                       'Free forever. No spam. Just phonk.',
                       style: GoogleFonts.inter(
-                        fontSize: 12, color: AppColors.textMuted,
+                        fontSize: 12,
+                        color: AppColors.textMuted,
                       ),
                     ),
 
@@ -260,7 +285,10 @@ class _CommunityOnboardingScreenState
 
 class _AnimatedOrb extends StatelessWidget {
   const _AnimatedOrb({
-    this.top, this.bottom, this.left, this.right,
+    this.top,
+    this.bottom,
+    this.left,
+    this.right,
     required this.color,
     required this.size,
     required this.opacity,
@@ -273,13 +301,20 @@ class _AnimatedOrb extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      top: top, bottom: bottom, left: left, right: right,
+      top: top,
+      bottom: bottom,
+      left: left,
+      right: right,
       child: Container(
-        width: size, height: size,
+        width: size,
+        height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           gradient: RadialGradient(
-            colors: [color.withValues(alpha: opacity), Colors.transparent],
+            colors: [
+              color.withValues(alpha: opacity),
+              Colors.transparent,
+            ],
           ),
         ),
       ),
@@ -297,7 +332,8 @@ class _FeatureRow extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 36, height: 36,
+          width: 36,
+          height: 36,
           decoration: BoxDecoration(
             color: AppColors.phonkRed.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
@@ -306,10 +342,13 @@ class _FeatureRow extends StatelessWidget {
         ),
         const SizedBox(width: 14),
         Expanded(
-          child: Text(text,
-              style: GoogleFonts.inter(
-                fontSize: 14, color: AppColors.textSecondary,
-              )),
+          child: Text(
+            text,
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: AppColors.textSecondary,
+            ),
+          ),
         ),
       ],
     );
@@ -350,17 +389,21 @@ class _PhonkCTAButton extends StatelessWidget {
         child: Center(
           child: isLoading
               ? const SizedBox(
-                  width: 22, height: 22,
+                  width: 22,
+                  height: 22,
                   child: CircularProgressIndicator(
-                    strokeWidth: 2.5, color: Colors.white,
+                    strokeWidth: 2.5,
+                    color: Colors.white,
                   ),
                 )
-              : Text(label,
+              : Text(
+                  label,
                   style: GoogleFonts.inter(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
-                  )),
+                  ),
+                ),
         ),
       ),
     );

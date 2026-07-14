@@ -12,7 +12,12 @@ import '../widgets/community_widgets.dart';
 import 'community_members_screen.dart';
 
 class CommunityChatScreen extends StatefulWidget {
-  const CommunityChatScreen({super.key});
+  const CommunityChatScreen({super.key, this.onLeft});
+
+  /// Called after successfully leaving the community. This screen is shown
+  /// embedded (not pushed) by CommunityGate, so there's no route to pop —
+  /// the host uses this to switch back to the rejoin prompt instead.
+  final VoidCallback? onLeft;
 
   @override
   State<CommunityChatScreen> createState() => _CommunityChatScreenState();
@@ -86,10 +91,7 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
 
     try {
       final oldest = _messages.first.createdAt;
-      final older = await _repo.getMessages(
-        beforeTimestamp: oldest,
-        limit: 30,
-      );
+      final older = await _repo.getMessages(beforeTimestamp: oldest, limit: 30);
       if (mounted) {
         setState(() {
           _messages = [...older.reversed.toList(), ..._messages];
@@ -171,9 +173,11 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
       if (mounted) {
         setState(() => _isSending = false);
         _msgCtrl.text = text; // restore
-        PhonkToast.show(context,
-            message: 'Failed to send. Try again.',
-            type: ToastType.error);
+        PhonkToast.show(
+          context,
+          message: 'Failed to send. Try again.',
+          type: ToastType.error,
+        );
       }
     }
   }
@@ -188,30 +192,33 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
     try {
       await _repo.leaveCommunity();
       if (!mounted) return;
-      Navigator.of(context).pop();
-      PhonkToast.show(context,
-          message: 'You have left the community.',
-          type: ToastType.info);
+      PhonkToast.show(
+        context,
+        message: 'You have left the community.',
+        type: ToastType.info,
+      );
+      widget.onLeft?.call();
     } catch (e) {
       if (mounted) {
-        PhonkToast.show(context,
-            message: 'Could not leave. Try again.',
-            type: ToastType.error);
+        PhonkToast.show(
+          context,
+          message: 'Could not leave. Try again.',
+          type: ToastType.error,
+        );
       }
     }
   }
 
   bool _isSameDay(ChatMessage a, ChatMessage b) {
-    final da = DateTime.fromMillisecondsSinceEpoch(
-        a.createdAt.toInt() * 1000);
-    final db = DateTime.fromMillisecondsSinceEpoch(
-        b.createdAt.toInt() * 1000);
+    final da = DateTime.fromMillisecondsSinceEpoch(a.createdAt.toInt() * 1000);
+    final db = DateTime.fromMillisecondsSinceEpoch(b.createdAt.toInt() * 1000);
     return da.day == db.day && da.month == db.month && da.year == db.year;
   }
 
   String _dayLabel(ChatMessage msg) {
     final dt = DateTime.fromMillisecondsSinceEpoch(
-        msg.createdAt.toInt() * 1000);
+      msg.createdAt.toInt() * 1000,
+    );
     final now = DateTime.now();
     if (dt.day == now.day && dt.month == now.month) return 'Today';
     final yesterday = now.subtract(const Duration(days: 1));
@@ -245,80 +252,86 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
               child: _isLoadingHistory
                   ? const Center(
                       child: CircularProgressIndicator(
-                        color: AppColors.phonkRed, strokeWidth: 2,
+                        color: AppColors.phonkRed,
+                        strokeWidth: 2,
                       ),
                     )
                   : _messages.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.chat_bubble_outline_rounded,
-                                  color: AppColors.textMuted, size: 44),
-                              const SizedBox(height: 12),
-                              Text('No messages yet.\nBe the first to drift in.',
-                                  textAlign: TextAlign.center,
-                                  style: GoogleFonts.inter(
-                                    fontSize: 14,
-                                    color: AppColors.textSecondary,
-                                    height: 1.5,
-                                  )),
-                            ],
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.chat_bubble_outline_rounded,
+                            color: AppColors.textMuted,
+                            size: 44,
                           ),
-                        )
-                      : ListView.builder(
-                          controller: _scrollCtrl,
-                          physics: const BouncingScrollPhysics(),
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          itemCount: _messages.length +
-                              (_isLoadingMore ? 1 : 0),
-                          itemBuilder: (_, i) {
-                            if (i == 0 && _isLoadingMore) {
-                              return const Padding(
-                                padding: EdgeInsets.all(12),
-                                child: Center(
-                                  child: SizedBox(
-                                    width: 20, height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: AppColors.phonkRed,
-                                    ),
-                                  ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'No messages yet.\nBe the first to drift in.',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              color: AppColors.textSecondary,
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      controller: _scrollCtrl,
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      itemCount: _messages.length + (_isLoadingMore ? 1 : 0),
+                      itemBuilder: (_, i) {
+                        if (i == 0 && _isLoadingMore) {
+                          return const Padding(
+                            padding: EdgeInsets.all(12),
+                            child: Center(
+                              child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.phonkRed,
                                 ),
-                              );
-                            }
+                              ),
+                            ),
+                          );
+                        }
 
-                            final msgIdx = _isLoadingMore ? i - 1 : i;
-                            final msg = _messages[msgIdx];
-                            final isMine = msg.userId == _myUserId;
+                        final msgIdx = _isLoadingMore ? i - 1 : i;
+                        final msg = _messages[msgIdx];
+                        final isMine = msg.userId == _myUserId;
 
-                            // Date separator
-                            final showDate = msgIdx == 0 ||
-                                !_isSameDay(
-                                    _messages[msgIdx - 1], msg);
+                        // Date separator
+                        final showDate =
+                            msgIdx == 0 ||
+                            !_isSameDay(_messages[msgIdx - 1], msg);
 
-                            // Show avatar if first or different user
-                            final showAvatar = msgIdx == 0 ||
-                                _messages[msgIdx - 1].userId != msg.userId;
+                        // Show avatar if first or different user
+                        final showAvatar =
+                            msgIdx == 0 ||
+                            _messages[msgIdx - 1].userId != msg.userId;
 
-                            return Column(
-                              children: [
-                                if (showDate)
-                                  DateSeparator(label: _dayLabel(msg)),
-                                MessageBubble(
-                                  message: msg,
-                                  isMine: isMine,
-                                  showAvatar: showAvatar,
-                                  myUserId: _myUserId,
-                                  onReply: (m) {
-                                    setState(() => _replyingTo = m);
-                                    _focusNode.requestFocus();
-                                  },
-                                ),
-                              ],
-                            );
-                          },
-                        ),
+                        return Column(
+                          children: [
+                            if (showDate) DateSeparator(label: _dayLabel(msg)),
+                            MessageBubble(
+                              message: msg,
+                              isMine: isMine,
+                              showAvatar: showAvatar,
+                              myUserId: _myUserId,
+                              onReply: (m) {
+                                setState(() => _replyingTo = m);
+                                _focusNode.requestFocus();
+                              },
+                            ),
+                          ],
+                        );
+                      },
+                    ),
             ),
 
             // ── Reply banner ───────────────────────────────────────────
@@ -341,15 +354,14 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
       padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
       decoration: BoxDecoration(
         color: AppColors.bgDeep,
-        border: Border(
-          bottom: BorderSide(color: AppColors.borderSubtle),
-        ),
+        border: Border(bottom: BorderSide(color: AppColors.borderSubtle)),
       ),
       child: Row(
         children: [
           // Community icon
           Container(
-            width: 40, height: 40,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
@@ -362,8 +374,11 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                 color: AppColors.phonkRed.withValues(alpha: 0.4),
               ),
             ),
-            child: const Icon(Icons.people_rounded,
-                color: AppColors.phonkRed, size: 20),
+            child: const Icon(
+              Icons.people_rounded,
+              color: AppColors.phonkRed,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 12),
 
@@ -371,16 +386,19 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('PhonkDrift Community',
-                    style: GoogleFonts.inter(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
-                    )),
+                Text(
+                  'PhonkDrift Community',
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
                 Row(
                   children: [
                     Container(
-                      width: 6, height: 6,
+                      width: 6,
+                      height: 6,
                       decoration: const BoxDecoration(
                         color: AppColors.phonkRed,
                         shape: BoxShape.circle,
@@ -388,11 +406,10 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                     ),
                     const SizedBox(width: 5),
                     Text(
-                      _memberCount > 0
-                          ? '$_memberCount members'
-                          : 'Community',
+                      _memberCount > 0 ? '$_memberCount members' : 'Community',
                       style: GoogleFonts.inter(
-                        fontSize: 12, color: AppColors.textMuted,
+                        fontSize: 12,
+                        color: AppColors.textMuted,
                       ),
                     ),
                   ],
@@ -404,19 +421,21 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
           // Members button
           GestureDetector(
             onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => const CommunityMembersScreen(),
-              ),
+              MaterialPageRoute(builder: (_) => const CommunityMembersScreen()),
             ),
             child: Container(
-              width: 36, height: 36,
+              width: 36,
+              height: 36,
               decoration: BoxDecoration(
                 color: AppColors.bgSurface,
                 shape: BoxShape.circle,
                 border: Border.all(color: AppColors.borderSubtle),
               ),
-              child: const Icon(Icons.group_outlined,
-                  color: AppColors.textMuted, size: 18),
+              child: const Icon(
+                Icons.group_outlined,
+                color: AppColors.textMuted,
+                size: 18,
+              ),
             ),
           ),
 
@@ -425,14 +444,18 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
           // 3-dot menu
           PopupMenuButton<String>(
             icon: Container(
-              width: 36, height: 36,
+              width: 36,
+              height: 36,
               decoration: BoxDecoration(
                 color: AppColors.bgSurface,
                 shape: BoxShape.circle,
                 border: Border.all(color: AppColors.borderSubtle),
               ),
-              child: const Icon(Icons.more_vert_rounded,
-                  color: AppColors.textMuted, size: 18),
+              child: const Icon(
+                Icons.more_vert_rounded,
+                color: AppColors.textMuted,
+                size: 18,
+              ),
             ),
             color: AppColors.bgSurface,
             shape: RoundedRectangleBorder(
@@ -442,9 +465,11 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
             onSelected: (val) {
               if (val == 'leave') _leaveCommunity();
               if (val == 'members') {
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => const CommunityMembersScreen(),
-                ));
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const CommunityMembersScreen(),
+                  ),
+                );
               }
             },
             itemBuilder: (_) => [
@@ -452,13 +477,19 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                 value: 'members',
                 child: Row(
                   children: [
-                    const Icon(Icons.people_outline_rounded,
-                        color: AppColors.textSecondary, size: 18),
+                    const Icon(
+                      Icons.people_outline_rounded,
+                      color: AppColors.textSecondary,
+                      size: 18,
+                    ),
                     const SizedBox(width: 10),
-                    Text('View Members',
-                        style: GoogleFonts.inter(
-                          fontSize: 14, color: AppColors.textPrimary,
-                        )),
+                    Text(
+                      'View Members',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -466,13 +497,19 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                 value: 'leave',
                 child: Row(
                   children: [
-                    const Icon(Icons.exit_to_app_rounded,
-                        color: AppColors.phonkRed, size: 18),
+                    const Icon(
+                      Icons.exit_to_app_rounded,
+                      color: AppColors.phonkRed,
+                      size: 18,
+                    ),
                     const SizedBox(width: 10),
-                    Text('Leave Community',
-                        style: GoogleFonts.inter(
-                          fontSize: 14, color: AppColors.phonkRed,
-                        )),
+                    Text(
+                      'Leave Community',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: AppColors.phonkRed,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -488,9 +525,7 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
       decoration: BoxDecoration(
         color: AppColors.bgDeep,
-        border: Border(
-          top: BorderSide(color: AppColors.borderSubtle),
-        ),
+        border: Border(top: BorderSide(color: AppColors.borderSubtle)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -503,14 +538,18 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
               type: ToastType.info,
             ),
             child: Container(
-              width: 40, height: 40,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 color: AppColors.bgSurface,
                 shape: BoxShape.circle,
                 border: Border.all(color: AppColors.borderSubtle),
               ),
-              child: const Icon(Icons.music_note_rounded,
-                  color: AppColors.textMuted, size: 18),
+              child: const Icon(
+                Icons.music_note_rounded,
+                color: AppColors.textMuted,
+                size: 18,
+              ),
             ),
           ),
           const SizedBox(width: 8),
@@ -533,17 +572,21 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                 focusNode: _focusNode,
                 maxLines: null,
                 style: GoogleFonts.inter(
-                  color: AppColors.textPrimary, fontSize: 14,
+                  color: AppColors.textPrimary,
+                  fontSize: 14,
                 ),
                 onChanged: (_) => setState(() {}),
                 decoration: InputDecoration(
                   hintText: 'Message the drift...',
                   hintStyle: GoogleFonts.inter(
-                    color: AppColors.textMuted, fontSize: 14,
+                    color: AppColors.textMuted,
+                    fontSize: 14,
                   ),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 10),
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
                 ),
               ),
             ),
@@ -556,7 +599,8 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
             onTap: _msgCtrl.text.trim().isNotEmpty ? _sendMessage : null,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              width: 40, height: 40,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 color: _msgCtrl.text.trim().isNotEmpty
                     ? AppColors.phonkRed
@@ -576,7 +620,8 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                   ? const Padding(
                       padding: EdgeInsets.all(10),
                       child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white,
+                        strokeWidth: 2,
+                        color: Colors.white,
                       ),
                     )
                   : Icon(
@@ -607,26 +652,35 @@ class _LeaveConfirmDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 60, height: 60,
+              width: 60,
+              height: 60,
               decoration: BoxDecoration(
                 color: AppColors.phonkRed.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.exit_to_app_rounded,
-                  color: AppColors.phonkRed, size: 28),
+              child: const Icon(
+                Icons.exit_to_app_rounded,
+                color: AppColors.phonkRed,
+                size: 28,
+              ),
             ),
             const SizedBox(height: 16),
-            Text('Leave Community?',
-                style: GoogleFonts.inter(
-                  fontSize: 18, fontWeight: FontWeight.w900,
-                  color: AppColors.textPrimary,
-                )),
+            Text(
+              'Leave Community?',
+              style: GoogleFonts.inter(
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                color: AppColors.textPrimary,
+              ),
+            ),
             const SizedBox(height: 8),
             Text(
               'You will lose your place in the community. If you rejoined after the first 50 members, your OG badge will not be restored.',
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(
-                fontSize: 13, color: AppColors.textSecondary, height: 1.5,
+                fontSize: 13,
+                color: AppColors.textSecondary,
+                height: 1.5,
               ),
             ),
             const SizedBox(height: 24),
@@ -643,11 +697,14 @@ class _LeaveConfirmDialog extends StatelessWidget {
                         border: Border.all(color: AppColors.borderSubtle),
                       ),
                       child: Center(
-                        child: Text('Cancel',
-                            style: GoogleFonts.inter(
-                              fontSize: 14, fontWeight: FontWeight.w600,
-                              color: AppColors.textSecondary,
-                            )),
+                        child: Text(
+                          'Cancel',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -663,11 +720,14 @@ class _LeaveConfirmDialog extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Center(
-                        child: Text('Leave',
-                            style: GoogleFonts.inter(
-                              fontSize: 14, fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            )),
+                        child: Text(
+                          'Leave',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ),
