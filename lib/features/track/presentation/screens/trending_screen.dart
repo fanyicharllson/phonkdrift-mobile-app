@@ -10,8 +10,15 @@ import '../controllers/track_controller.dart';
 import '../widgets/playing_equalizer.dart';
 
 class TrendingScreen extends StatefulWidget {
-  const TrendingScreen({super.key, required this.controller});
+  const TrendingScreen({super.key, required this.controller, this.focusTrackId});
   final TrackController controller;
+
+  /// When set, once the list loads this screen scrolls to and briefly
+  /// highlights the matching track — used for push-notification deep links.
+  /// There's no single-track lookup endpoint on the backend, so this only
+  /// works if the track happens to be in this batch; it's a graceful no-op
+  /// otherwise (no crash, nothing weird — just an unhighlighted list).
+  final String? focusTrackId;
 
   @override
   State<TrendingScreen> createState() => _TrendingScreenState();
@@ -23,6 +30,8 @@ class _TrendingScreenState extends State<TrendingScreen> {
   bool _isLoading = true;
   String _error = '';
   final _searchCtrl = TextEditingController();
+  final _scrollCtrl = ScrollController();
+  String? _highlightedTrackId;
 
   @override
   void initState() {
@@ -35,6 +44,7 @@ class _TrendingScreenState extends State<TrendingScreen> {
   void dispose() {
     widget.controller.removeListener(_onControllerUpdate);
     _searchCtrl.dispose();
+    _scrollCtrl.dispose();
     super.dispose();
   }
 
@@ -63,6 +73,7 @@ class _TrendingScreenState extends State<TrendingScreen> {
           _filtered = res;
           _isLoading = false;
         });
+        _scrollToFocusTrackIfAny();
       }
     } catch (e) {
       if (mounted) {
@@ -72,6 +83,33 @@ class _TrendingScreenState extends State<TrendingScreen> {
         });
       }
     }
+  }
+
+  void _scrollToFocusTrackIfAny() {
+    final focusId = widget.focusTrackId;
+    if (focusId == null || focusId.isEmpty) return;
+    final index = _filtered.indexWhere((t) => t.trackId == focusId);
+    if (index == -1) return; // not in this batch — quietly do nothing
+
+    setState(() => _highlightedTrackId = focusId);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollCtrl.hasClients) return;
+      final maxExtent = _scrollCtrl.position.maxScrollExtent;
+      if (maxExtent <= 0) return;
+      // Proportional rather than a guessed per-item pixel height — stays
+      // correct regardless of actual tile height.
+      final fraction = index / _filtered.length;
+      _scrollCtrl.animateTo(
+        (fraction * maxExtent).clamp(0.0, maxExtent),
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeOutCubic,
+      );
+    });
+
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) setState(() => _highlightedTrackId = null);
+    });
   }
 
   void _onSearch(String val) {
@@ -346,6 +384,7 @@ class _TrendingScreenState extends State<TrendingScreen> {
                           backgroundColor: AppColors.bgSurface,
                           onRefresh: _load,
                           child: ListView.builder(
+                            controller: _scrollCtrl,
                             physics: const BouncingScrollPhysics(),
                             padding: const EdgeInsets.only(bottom: 160),
                             itemCount: _filtered.length,
@@ -355,6 +394,8 @@ class _TrendingScreenState extends State<TrendingScreen> {
                               isPlaying:
                                   widget.controller.nowPlaying?.trackId ==
                                   _filtered[i].trackId,
+                              isHighlighted:
+                                  _filtered[i].trackId == _highlightedTrackId,
                               isLiked: widget.controller.isLiked(
                                 _filtered[i].trackId,
                               ),
@@ -387,6 +428,7 @@ class _TrendingTile extends StatelessWidget {
     required this.onLike,
     this.isPlaying = false,
     this.isLiked = false,
+    this.isHighlighted = false,
   });
 
   final int rank;
@@ -396,26 +438,45 @@ class _TrendingTile extends StatelessWidget {
   final bool isPlaying;
   final bool isLiked;
 
+  /// Briefly true right after arriving here via a push-notification deep
+  /// link, so the user can actually spot the track that was linked to.
+  final bool isHighlighted;
+
   @override
   Widget build(BuildContext context) {
     final isTop3 = rank <= 3;
 
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOut,
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isPlaying
+          color: isHighlighted
+              ? AppColors.phonkRed.withValues(alpha: 0.12)
+              : isPlaying
               ? AppColors.phonkRed.withValues(alpha: 0.07)
               : AppColors.bgSurface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isPlaying
+            color: isHighlighted
+                ? AppColors.phonkRed
+                : isPlaying
                 ? AppColors.phonkRed.withValues(alpha: 0.3)
                 : AppColors.borderSubtle,
+            width: isHighlighted ? 1.5 : 1,
           ),
-          boxShadow: isTop3
+          boxShadow: isHighlighted
+              ? [
+                  BoxShadow(
+                    color: AppColors.phonkRed.withValues(alpha: 0.35),
+                    blurRadius: 20,
+                    spreadRadius: 1,
+                  ),
+                ]
+              : isTop3
               ? [
                   BoxShadow(
                     color: AppColors.phonkRed.withValues(alpha: 0.08),

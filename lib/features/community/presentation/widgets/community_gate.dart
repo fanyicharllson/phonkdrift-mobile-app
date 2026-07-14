@@ -3,10 +3,11 @@ import '../../../../core/utils/storage_helper.dart';
 import '../../data/repositories/community_repository.dart';
 import '../screens/community_chat_screen.dart';
 import '../screens/community_onboarding_screen.dart';
+import 'community_error_state.dart';
 import 'community_loading_state.dart';
 import 'community_rejoin_prompt.dart';
 
-enum _CommunityStatus { loading, member, needsOnboarding, needsRejoin }
+enum _CommunityStatus { loading, member, needsOnboarding, needsRejoin, error }
 
 /// Owns the "is this user in the community?" check and shows the right
 /// screen for it — embedded directly in HomeScreen's Community tab (never
@@ -21,6 +22,7 @@ class CommunityGate extends StatefulWidget {
 
 class _CommunityGateState extends State<CommunityGate> {
   _CommunityStatus _status = _CommunityStatus.loading;
+  String _errorMessage = '';
 
   @override
   void initState() {
@@ -45,8 +47,12 @@ class _CommunityGateState extends State<CommunityGate> {
             ? _CommunityStatus.needsRejoin
             : _CommunityStatus.needsOnboarding;
       });
-    } catch (_) {
-      if (mounted) setState(() => _status = _CommunityStatus.needsOnboarding);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _status = _CommunityStatus.error;
+        _errorMessage = e.toString().replaceAll('CommunityException: ', '');
+      });
     }
   }
 
@@ -60,6 +66,12 @@ class _CommunityGateState extends State<CommunityGate> {
       ),
       _CommunityStatus.needsOnboarding => CommunityOnboardingScreen(
         onJoined: _refresh,
+      ),
+      _CommunityStatus.error => CommunityErrorState(
+        message: _errorMessage.isNotEmpty
+            ? _errorMessage
+            : 'Something went wrong. Check your connection and try again.',
+        onRetry: _refresh,
       ),
     };
   }

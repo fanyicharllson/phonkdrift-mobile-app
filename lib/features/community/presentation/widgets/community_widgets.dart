@@ -100,6 +100,50 @@ class MemberBadge extends StatelessWidget {
   }
 }
 
+// ── Message entrance animation ───────────────────────────────────────────────────
+/// Fades + slides a newly-inserted message bubble in. Give the wrapper a
+/// [ValueKey] on the message's id so Flutter only replays this once per
+/// genuinely new message, not on every list rebuild.
+class AnimatedMessageEntry extends StatefulWidget {
+  const AnimatedMessageEntry({super.key, required this.child});
+  final Widget child;
+
+  @override
+  State<AnimatedMessageEntry> createState() => _AnimatedMessageEntryState();
+}
+
+class _AnimatedMessageEntryState extends State<AnimatedMessageEntry>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 240),
+  )..forward();
+
+  late final Animation<double> _fade = CurvedAnimation(
+    parent: _controller,
+    curve: Curves.easeOut,
+  );
+
+  late final Animation<Offset> _slide = Tween<Offset>(
+    begin: const Offset(0, 0.12),
+    end: Offset.zero,
+  ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(position: _slide, child: widget.child),
+    );
+  }
+}
+
 // ── Message Bubble ──────────────────────────────────────────────────────────────
 class MessageBubble extends StatelessWidget {
   const MessageBubble({
@@ -109,6 +153,8 @@ class MessageBubble extends StatelessWidget {
     required this.showAvatar,
     required this.onReply,
     required this.myUserId,
+    this.badge = '',
+    this.isPending = false,
   });
 
   final ChatMessage message;
@@ -116,6 +162,8 @@ class MessageBubble extends StatelessWidget {
   final bool showAvatar;
   final void Function(ChatMessage) onReply;
   final String myUserId;
+  final String badge;
+  final bool isPending;
 
   @override
   Widget build(BuildContext context) {
@@ -150,17 +198,26 @@ class MessageBubble extends StatelessWidget {
                     ? CrossAxisAlignment.end
                     : CrossAxisAlignment.start,
                 children: [
-                  // Username (others only, first bubble in group)
+                  // Username + badge (others only, first bubble in group)
                   if (!isMine && showAvatar) ...[
                     Padding(
                       padding: const EdgeInsets.only(left: 4, bottom: 3),
-                      child: Text(
-                        message.username,
-                        style: GoogleFonts.inter(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.phonkRed,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            message.username,
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.phonkRed,
+                            ),
+                          ),
+                          if (badge.isNotEmpty) ...[
+                            const SizedBox(width: 5),
+                            MemberBadge(badge: badge),
+                          ],
+                        ],
                       ),
                     ),
                   ],
@@ -206,13 +263,30 @@ class MessageBubble extends StatelessWidget {
                     ),
                   ),
 
-                  // Timestamp
+                  // Timestamp + delivery state (mine only — WhatsApp-style
+                  // "you know it sent" cue, e.g. clock while pending, check
+                  // once the server has confirmed it).
                   const SizedBox(height: 3),
-                  Text(
-                    _formatTime(message.createdAt.toInt()),
-                    style: GoogleFonts.inter(
-                      fontSize: 10, color: AppColors.textMuted,
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _formatTime(message.createdAt.toInt()),
+                        style: GoogleFonts.inter(
+                          fontSize: 10, color: AppColors.textMuted,
+                        ),
+                      ),
+                      if (isMine) ...[
+                        const SizedBox(width: 4),
+                        Icon(
+                          isPending
+                              ? Icons.access_time_rounded
+                              : Icons.done_rounded,
+                          size: 12,
+                          color: AppColors.textMuted,
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ),

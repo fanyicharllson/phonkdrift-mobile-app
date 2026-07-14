@@ -32,9 +32,14 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
   List<ChatMessage> _messages = [];
   bool _isLoadingHistory = true;
   bool _isLoadingMore = false;
-  bool _isSending = false;
   bool _hasMore = true;
   int _memberCount = 0;
+
+  // Messages we've sent but haven't heard back from the server on yet —
+  // shown instantly with a "sending" clock instead of waiting on the round
+  // trip, WhatsApp-style.
+  final Set<String> _pendingMessageIds = {};
+  Map<String, String> _memberBadges = {};
 
   ChatMessage? _replyingTo;
   String _myUserId = '';
@@ -55,6 +60,7 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
     await _loadHistory();
     _subscribeToChat();
     _loadStats();
+    _loadMemberBadges();
   }
 
   Future<void> _loadStats() async {
@@ -62,6 +68,19 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
       final stats = await _repo.getStats();
       if (mounted) setState(() => _memberCount = stats.totalMembers);
     } catch (_) {}
+  }
+
+  Future<void> _loadMemberBadges() async {
+    try {
+      final res = await _repo.getMembers(limit: 200);
+      if (mounted) {
+        setState(() {
+          _memberBadges = {for (final m in res.members) m.userId: m.badge};
+        });
+      }
+    } catch (_) {
+      // Badges are cosmetic — never block the chat over this.
+    }
   }
 
   Future<void> _loadHistory() async {
@@ -104,12 +123,16 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
     }
   }
 
-  void _subscribeToChat() {
+  Future<void> _subscribeToChat() async {
     try {
-      final stream = _repo.subscribeToChat();
+      final stream = await _repo.subscribeToChat();
+      if (!mounted) return;
+      _chatSub?.cancel();
       _chatSub = stream.listen(
         (msg) {
           if (!mounted) return;
+          // Our own message already appeared optimistically — skip the echo.
+          if (_messages.any((m) => m.id == msg.id)) return;
           setState(() => _messages.add(msg));
           // Only auto-scroll if near bottom
           if (_scrollCtrl.hasClients &&
@@ -151,28 +174,54 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
 
   Future<void> _sendMessage() async {
     final text = _msgCtrl.text.trim();
-    if (text.isEmpty || _isSending) return;
+    if (text.isEmpty) return;
 
-    setState(() => _isSending = true);
     final replyId = _replyingTo?.id ?? '';
+    final replyUsername = _replyingTo?.username ?? '';
+    final replySnippet = _replyingTo?.content ?? '';
+    final tempId = 'pending-${DateTime.now().microsecondsSinceEpoch}';
+
+    // Show it instantly — don't make the user wait on the round trip to see
+    // their own message land.
+    final optimistic = ChatMessage(
+      id: tempId,
+      userId: _myUserId,
+      username: _myUsername,
+      content: text,
+      messageType: 'text',
+      replyToId: replyId,
+      replyToUsername: replyUsername,
+      replyToContentSnippet: replySnippet,
+      createdAt: Int64(DateTime.now().millisecondsSinceEpoch ~/ 1000),
+    );
+
+    setState(() {
+      _messages.add(optimistic);
+      _pendingMessageIds.add(tempId);
+      _replyingTo = null;
+    });
     _msgCtrl.clear();
+    _scrollToBottom();
 
     try {
-      await _repo.sendMessage(
+      final sent = await _repo.sendMessage(
         content: text,
         replyToId: replyId,
         messageType: 'text',
       );
-      if (mounted) {
-        setState(() {
-          _replyingTo = null;
-          _isSending = false;
-        });
-      }
+      if (!mounted) return;
+      setState(() {
+        final idx = _messages.indexWhere((m) => m.id == tempId);
+        if (idx != -1) _messages[idx] = sent;
+        _pendingMessageIds.remove(tempId);
+      });
     } catch (e) {
       if (mounted) {
-        setState(() => _isSending = false);
-        _msgCtrl.text = text; // restore
+        setState(() {
+          _messages.removeWhere((m) => m.id == tempId);
+          _pendingMessageIds.remove(tempId);
+        });
+        _msgCtrl.text = text; // restore so the user can retry
         PhonkToast.show(
           context,
           message: 'Failed to send. Try again.',
@@ -316,17 +365,22 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                             _messages[msgIdx - 1].userId != msg.userId;
 
                         return Column(
+                          key: ValueKey(msg.id),
                           children: [
                             if (showDate) DateSeparator(label: _dayLabel(msg)),
-                            MessageBubble(
-                              message: msg,
-                              isMine: isMine,
-                              showAvatar: showAvatar,
-                              myUserId: _myUserId,
-                              onReply: (m) {
-                                setState(() => _replyingTo = m);
-                                _focusNode.requestFocus();
-                              },
+                            AnimatedMessageEntry(
+                              child: MessageBubble(
+                                message: msg,
+                                isMine: isMine,
+                                showAvatar: showAvatar,
+                                myUserId: _myUserId,
+                                badge: _memberBadges[msg.userId] ?? '',
+                                isPending: _pendingMessageIds.contains(msg.id),
+                                onReply: (m) {
+                                  setState(() => _replyingTo = m);
+                                  _focusNode.requestFocus();
+                                },
+                              ),
                             ),
                           ],
                         );
@@ -521,12 +575,10 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
   }
 
   Widget _buildInputBar() {
-    // Extra bottom padding clears the floating nav bar that overlays every
-    // tab (including this one) when the keyboard isn't up; when it is,
-    // the keyboard itself pushes this bar above the nav already.
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    // The floating nav is hidden entirely on the Community tab (see
+    // home_screen.dart), so this just needs its own normal padding.
     return Container(
-      padding: EdgeInsets.fromLTRB(12, 8, 12, bottomInset > 0 ? 12 : 100),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
       decoration: BoxDecoration(
         color: AppColors.bgDeep,
         border: Border(top: BorderSide(color: AppColors.borderSubtle)),
@@ -620,21 +672,13 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                       ]
                     : [],
               ),
-              child: _isSending
-                  ? const Padding(
-                      padding: EdgeInsets.all(10),
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : Icon(
-                      Icons.send_rounded,
-                      color: _msgCtrl.text.trim().isNotEmpty
-                          ? Colors.white
-                          : AppColors.textMuted,
-                      size: 18,
-                    ),
+              child: Icon(
+                Icons.send_rounded,
+                color: _msgCtrl.text.trim().isNotEmpty
+                    ? Colors.white
+                    : AppColors.textMuted,
+                size: 18,
+              ),
             ),
           ),
         ],

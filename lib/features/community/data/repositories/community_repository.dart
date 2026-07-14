@@ -116,9 +116,11 @@ class CommunityRepository {
     }
   }
 
-  ResponseStream<ChatMessage> subscribeToChat() {
+  Future<ResponseStream<ChatMessage>> subscribeToChat() async {
+    final opts = await _authOptions;
     return _client.chat.subscribeToChat(
       SubscribeRequest(userId: ''), // gateway sets from token
+      options: opts,
     );
   }
 

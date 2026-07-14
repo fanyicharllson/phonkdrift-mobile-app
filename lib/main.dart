@@ -11,10 +11,15 @@ import 'core/widgets/account_ban_monitor.dart';
 import 'features/auth/presentation/screens/router_screen.dart';
 
 /// Runs in a separate isolate — keep it top-level and dependency-free.
+/// This isolate has its own memory (its own separate PushNotificationService
+/// instance with no UI listening to it), so it can't drive navigation or any
+/// other app-side effect. It only needs to exist so FCM will keep delivering
+/// data-only pushes while the app is backgrounded/killed — the actual
+/// handling happens later via onMessageOpenedApp / getInitialMessage, once
+/// the user taps the notification and the main isolate is running.
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-  PushNotificationService.instance.handlePush(message.data);
 }
 
 Future<void> main() async {
@@ -48,12 +53,14 @@ Future<void> main() async {
 
   // Register background FCM handler — must be before runApp.
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  // Push arrived while the app is already open — no tap, so never navigate.
   FirebaseMessaging.onMessage.listen(
-    (msg) => PushNotificationService.instance.handlePush(msg.data),
+    (msg) => PushNotificationService.instance.handleForegroundPush(msg.data),
   );
-  // Tapped while app was backgrounded.
+  // Tapped while app was backgrounded (not killed) — safe to navigate.
   FirebaseMessaging.onMessageOpenedApp.listen(
-    (msg) => PushNotificationService.instance.handlePush(msg.data),
+    (msg) => PushNotificationService.instance.handleTappedPush(msg.data),
   );
 
   // Get the app on screen immediately.
@@ -63,7 +70,7 @@ Future<void> main() async {
   WidgetsBinding.instance.addPostFrameCallback((_) async {
     final initial = await FirebaseMessaging.instance.getInitialMessage();
     if (initial != null) {
-      PushNotificationService.instance.handlePush(initial.data);
+      PushNotificationService.instance.handleTappedPush(initial.data);
     }
   });
 

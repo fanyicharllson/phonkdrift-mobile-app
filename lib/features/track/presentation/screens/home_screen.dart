@@ -38,7 +38,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final _searchCtrl = TextEditingController();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   Timer? _searchDebounce;
-  StreamSubscription<TrendingPushPayload>? _trendingPushSub;
+  StreamSubscription<PushEvent>? _pushEventSub;
   bool _isPlayerScreenOpen = false;
 
   String _phonkLevel = '';
@@ -56,29 +56,68 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _controller.addListener(_onControllerUpdate);
     _searchCtrl.addListener(_onSearchChanged);
     _loadData();
-    _trendingPushSub = PushNotificationService.instance.onTrendingPush.listen((
-      payload,
-    ) {
-      if (!mounted) return;
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => TrendingScreen(controller: _controller),
-        ),
-      );
-    });
 
-    // Catch a push that was tapped while the app was fully killed — it fires
-    // via getInitialMessage before this screen (and the listener above)
-    // exists, so the live stream above alone would miss it.
-    if (PushNotificationService.instance.consumePendingTrending() != null) {
+    _pushEventSub = PushNotificationService.instance.onPushTapped.listen(
+      _handlePushEvent,
+    );
+
+    // Catch a tap that arrived while the app was fully killed — it fires via
+    // getInitialMessage before this screen (and the listener above) exists,
+    // so the live stream above alone would miss it.
+    final pendingEvent = PushNotificationService.instance
+        .consumePendingTappedEvent();
+    if (pendingEvent != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
+        _handlePushEvent(pendingEvent);
+      });
+    }
+  }
+
+  // ── Push notification routing ───────────────────────────────────────────────
+  // Only ever called for taps (see PushNotificationService) — never fires for
+  // a push that just silently arrived while the user was mid-task elsewhere.
+  void _handlePushEvent(PushEvent event) {
+    if (!mounted) return;
+    switch (event.type) {
+      case PushEventType.trendingBatch:
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => TrendingScreen(controller: _controller),
           ),
         );
-      });
+        break;
+      case PushEventType.trendingTrack:
+      case PushEventType.engagement:
+        // No single-track lookup endpoint on the backend yet — open the
+        // relevant list and let it scroll to/highlight the track once its
+        // batch loads, rather than faking a deep link we can't fulfill.
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => TrendingScreen(
+              controller: _controller,
+              focusTrackId: event.id,
+            ),
+          ),
+        );
+        break;
+      case PushEventType.chatMessage:
+      case PushEventType.chatReply:
+        _selectTab(2);
+        break;
+      case PushEventType.communityJoin:
+        _selectTab(2);
+        PhonkToast.show(
+          context,
+          message: 'A new drifter just joined the community!',
+          type: ToastType.info,
+        );
+        break;
+      case PushEventType.profileUpdated:
+      case PushEventType.announcement:
+      case PushEventType.unknown:
+        // Non-navigational (or genuinely unhandled) — the system
+        // notification already spoke for itself, nothing more to do.
+        break;
     }
   }
 
@@ -159,7 +198,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _controller.removeListener(_onControllerUpdate);
     _pageController.dispose();
     _searchDebounce?.cancel();
-    _trendingPushSub?.cancel();
+    _pushEventSub?.cancel();
     _searchCtrl.dispose();
     _controller.dispose();
     super.dispose();
@@ -227,16 +266,25 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ),
 
           // ── Mini player + bottom nav ───────────────────────────────────
+          // Hidden on the Community tab for an immersive, full-screen chat
+          // room feel — no floating chrome over the message list/input bar.
           Positioned(
             left: 0,
             right: 0,
             bottom: 0,
-            child: Column(
+            child: IgnorePointer(
+              ignoring: _selectedTab == 2,
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 200),
+                opacity: _selectedTab == 2 ? 0.0 : 1.0,
+                child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (_controller.hasNowPlaying) _buildMiniPlayer(),
                 _buildFloatingNav(),
               ],
+                ),
+              ),
             ),
           ),
         ],
