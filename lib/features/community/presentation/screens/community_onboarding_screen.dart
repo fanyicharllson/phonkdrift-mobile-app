@@ -130,11 +130,13 @@ class _CommunityOnboardingScreenState extends State<CommunityOnboardingScreen>
           SafeArea(
             child: FadeTransition(
               opacity: _fade,
-              child: Padding(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.symmetric(horizontal: 28),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Spacer(flex: 2),
+                    const SizedBox(height: 32),
 
                     // Pulsing community icon
                     ScaleTransition(
@@ -252,7 +254,7 @@ class _CommunityOnboardingScreenState extends State<CommunityOnboardingScreen>
                       text: 'Earn OG badge as an early member',
                     ),
 
-                    const Spacer(flex: 2),
+                    const SizedBox(height: 40),
 
                     // CTA
                     _PhonkCTAButton(
@@ -271,7 +273,9 @@ class _CommunityOnboardingScreenState extends State<CommunityOnboardingScreen>
                       ),
                     ),
 
-                    const SizedBox(height: 32),
+                    // Extra clearance so the CTA never sits under the
+                    // floating bottom nav.
+                    const SizedBox(height: 32 + 140),
                   ],
                 ),
               ),

@@ -521,8 +521,12 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
   }
 
   Widget _buildInputBar() {
+    // Extra bottom padding clears the floating nav bar that overlays every
+    // tab (including this one) when the keyboard isn't up; when it is,
+    // the keyboard itself pushes this bar above the nav already.
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+      padding: EdgeInsets.fromLTRB(12, 8, 12, bottomInset > 0 ? 12 : 100),
       decoration: BoxDecoration(
         color: AppColors.bgDeep,
         border: Border(top: BorderSide(color: AppColors.borderSubtle)),
