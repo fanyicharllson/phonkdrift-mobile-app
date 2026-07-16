@@ -7,12 +7,20 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/network/generated/chat.pb.dart';
 import '../../../../core/utils/storage_helper.dart';
 import '../../../../core/widgets/phonk_toast.dart';
+import '../../../track/presentation/controllers/track_controller.dart';
 import '../../data/repositories/community_repository.dart';
 import '../widgets/community_widgets.dart';
+import '../widgets/floating_player_bubble.dart';
 import 'community_members_screen.dart';
 
 class CommunityChatScreen extends StatefulWidget {
-  const CommunityChatScreen({super.key, this.onLeft, this.onBack});
+  const CommunityChatScreen({
+    super.key,
+    this.onLeft,
+    this.onBack,
+    this.trackController,
+    this.onOpenPlayer,
+  });
 
   /// Called after successfully leaving the community. This screen is shown
   /// embedded (not pushed) by CommunityGate, so there's no route to pop —
@@ -22,6 +30,12 @@ class CommunityChatScreen extends StatefulWidget {
   /// Shown as a real back arrow in the header — this screen is embedded
   /// (not pushed), so there's no route to pop back to on its own.
   final VoidCallback? onBack;
+
+  /// The mini player is hidden on this tab for an immersive chat room feel —
+  /// these let a small draggable bubble surface "now playing" instead so
+  /// users aren't cut off from the player entirely.
+  final TrackController? trackController;
+  final VoidCallback? onOpenPlayer;
 
   @override
   State<CommunityChatScreen> createState() => _CommunityChatScreenState();
@@ -56,6 +70,9 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
     super.initState();
     _init();
     _scrollCtrl.addListener(_onScroll);
+    _focusNode.addListener(() {
+      if (mounted) setState(() {});
+    });
   }
 
   Future<void> _init() async {
@@ -297,15 +314,30 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bgDeep,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // ── Header ──────────────────────────────────────────────────
-            _buildHeader(),
+      body: Stack(
+        children: [
+          SafeArea(
+            child: Column(
+              children: [
+                // ── Header ──────────────────────────────────────────────
+                _buildHeader(),
 
             // ── Messages ─────────────────────────────────────────────────
             Expanded(
-              child: _isLoadingHistory
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      AppColors.phonkRed.withValues(alpha: 0.06),
+                      const Color(0xFF6B00FF).withValues(alpha: 0.04),
+                      AppColors.bgDeep,
+                    ],
+                    stops: const [0.0, 0.22, 0.55],
+                  ),
+                ),
+                child: _isLoadingHistory
                   ? const Center(
                       child: CircularProgressIndicator(
                         color: AppColors.phonkRed,
@@ -391,6 +423,7 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                         );
                       },
                     ),
+              ),
             ),
 
             // ── Reply banner ───────────────────────────────────────────
@@ -400,23 +433,29 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                 onCancel: () => setState(() => _replyingTo = null),
               ),
 
-            // ── Input bar ─────────────────────────────────────────────
-            _buildInputBar(),
-          ],
-        ),
+                // ── Input bar ─────────────────────────────────────────
+                _buildInputBar(),
+              ],
+            ),
+          ),
+          if (widget.trackController != null && widget.onOpenPlayer != null)
+            FloatingPlayerBubble(
+              controller: widget.trackController!,
+              onTap: widget.onOpenPlayer!,
+            ),
+        ],
       ),
     );
   }
 
   Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
-      decoration: BoxDecoration(
-        color: AppColors.bgDeep,
-        border: Border(bottom: BorderSide(color: AppColors.borderSubtle)),
-      ),
-      child: Row(
-        children: [
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+          color: AppColors.bgDeep,
+          child: Row(
+            children: [
           if (widget.onBack != null) ...[
             GestureDetector(
               onTap: widget.onBack,
@@ -587,120 +626,166 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
               ),
             ],
           ),
-        ],
-      ),
+            ],
+          ),
+        ),
+        // Branded gradient underline instead of a flat divider.
+        Container(
+          height: 2,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.transparent,
+                AppColors.phonkRed.withValues(alpha: 0.5),
+                const Color(0xFF6B00FF).withValues(alpha: 0.4),
+                Colors.transparent,
+              ],
+              stops: const [0.0, 0.35, 0.65, 1.0],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildInputBar() {
     // The floating nav is hidden entirely on the Community tab (see
     // home_screen.dart), so this just needs its own normal padding.
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-      decoration: BoxDecoration(
-        color: AppColors.bgDeep,
-        border: Border(top: BorderSide(color: AppColors.borderSubtle)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          // TODO: Audio share button
-          GestureDetector(
-            onTap: () => PhonkToast.show(
-              context,
-              message: 'Audio sharing coming soon.',
-              type: ToastType.info,
-            ),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppColors.bgSurface,
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.borderSubtle),
-              ),
-              child: const Icon(
-                Icons.music_note_rounded,
-                color: AppColors.textMuted,
-                size: 18,
-              ),
+    return Column(
+      children: [
+        // Branded gradient hairline instead of a flat divider (echoes header).
+        Container(
+          height: 1,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.transparent,
+                AppColors.phonkRed.withValues(alpha: 0.4),
+                const Color(0xFF6B00FF).withValues(alpha: 0.3),
+                Colors.transparent,
+              ],
+              stops: const [0.0, 0.35, 0.65, 1.0],
             ),
           ),
-          const SizedBox(width: 8),
-
-          // Text field
-          Expanded(
-            child: Container(
-              constraints: const BoxConstraints(maxHeight: 120),
-              decoration: BoxDecoration(
-                color: AppColors.bgSurface,
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(
-                  color: _focusNode.hasFocus
-                      ? AppColors.phonkRed.withValues(alpha: 0.5)
-                      : AppColors.borderSubtle,
+        ),
+        Container(
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+          color: AppColors.bgDeep,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              // TODO: Audio share button
+              GestureDetector(
+                onTap: () => PhonkToast.show(
+                  context,
+                  message: 'Audio sharing coming soon.',
+                  type: ToastType.info,
                 ),
-              ),
-              child: TextField(
-                controller: _msgCtrl,
-                focusNode: _focusNode,
-                maxLines: null,
-                style: GoogleFonts.inter(
-                  color: AppColors.textPrimary,
-                  fontSize: 14,
-                ),
-                onChanged: (_) => setState(() {}),
-                decoration: InputDecoration(
-                  hintText: 'Message the drift...',
-                  hintStyle: GoogleFonts.inter(
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.bgSurface,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.borderSubtle),
+                  ),
+                  child: const Icon(
+                    Icons.music_note_rounded,
                     color: AppColors.textMuted,
-                    fontSize: 14,
-                  ),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
+                    size: 18,
                   ),
                 ),
               ),
-            ),
-          ),
+              const SizedBox(width: 8),
 
-          const SizedBox(width: 8),
-
-          // Send button
-          GestureDetector(
-            onTap: _msgCtrl.text.trim().isNotEmpty ? _sendMessage : null,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: _msgCtrl.text.trim().isNotEmpty
-                    ? AppColors.phonkRed
-                    : AppColors.bgSurface,
-                shape: BoxShape.circle,
-                boxShadow: _msgCtrl.text.trim().isNotEmpty
-                    ? [
-                        BoxShadow(
-                          color: AppColors.phonkRed.withValues(alpha: 0.3),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
+              // Text field — a true stadium/pill (radius pinned far past half
+              // the box height so Flutter always clamps it to a full pill,
+              // however tall the field gets) with a soft gradient ring that
+              // brightens on focus, rounder than WhatsApp's flatter capsule.
+              Expanded(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  constraints: const BoxConstraints(maxHeight: 120),
+                  padding: const EdgeInsets.all(1.4),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(999),
+                    gradient: LinearGradient(
+                      colors: _focusNode.hasFocus
+                          ? [
+                              AppColors.phonkRed.withValues(alpha: 0.8),
+                              const Color(0xFF6B00FF).withValues(alpha: 0.6),
+                            ]
+                          : [AppColors.borderSubtle, AppColors.borderSubtle],
+                    ),
+                  ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.bgSurface,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: TextField(
+                      controller: _msgCtrl,
+                      focusNode: _focusNode,
+                      maxLines: null,
+                      style: GoogleFonts.inter(
+                        color: AppColors.textPrimary,
+                        fontSize: 14,
+                      ),
+                      onChanged: (_) => setState(() {}),
+                      decoration: InputDecoration(
+                        hintText: 'Message the drift...',
+                        hintStyle: GoogleFonts.inter(
+                          color: AppColors.textMuted,
+                          fontSize: 14,
                         ),
-                      ]
-                    : [],
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 11,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ),
-              child: Icon(
-                Icons.send_rounded,
-                color: _msgCtrl.text.trim().isNotEmpty
-                    ? Colors.white
-                    : AppColors.textMuted,
-                size: 18,
+
+              const SizedBox(width: 8),
+
+              // Send button
+              GestureDetector(
+                onTap: _msgCtrl.text.trim().isNotEmpty ? _sendMessage : null,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: _msgCtrl.text.trim().isNotEmpty
+                        ? AppColors.phonkRed
+                        : AppColors.bgSurface,
+                    shape: BoxShape.circle,
+                    boxShadow: _msgCtrl.text.trim().isNotEmpty
+                        ? [
+                            BoxShadow(
+                              color: AppColors.phonkRed.withValues(alpha: 0.3),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ]
+                        : [],
+                  ),
+                  child: Icon(
+                    Icons.send_rounded,
+                    color: _msgCtrl.text.trim().isNotEmpty
+                        ? Colors.white
+                        : AppColors.textMuted,
+                    size: 18,
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

@@ -184,6 +184,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   void _selectTab(int index) {
     HapticFeedback.selectionClick();
+    // Tabs stay mounted (keep-alive) when you swipe away, so a focused field
+    // — chat input, search box, etc. — would otherwise hold the keyboard
+    // open over whichever tab you land on next.
+    FocusManager.instance.primaryFocus?.unfocus();
     setState(() => _selectedTab = index);
     _pageController.animateToPage(
       index,
@@ -292,12 +296,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             controller: _pageController,
             onPageChanged: (index) {
               HapticFeedback.selectionClick();
+              FocusManager.instance.primaryFocus?.unfocus();
               setState(() => _selectedTab = index);
             },
             children: [
               _buildHomePage(),
               SearchScreen(controller: _controller),
-              CommunityGate(onBack: () => _selectTab(0)),
+              CommunityGate(
+                onBack: () => _selectTab(0),
+                trackController: _controller,
+                onOpenPlayer: _openPlayerScreen,
+              ),
               LibraryScreen(controller: _controller),
               const ProfileScreen(),
             ],
