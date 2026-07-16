@@ -18,7 +18,7 @@ class _CommunityMembersScreenState extends State<CommunityMembersScreen> {
   bool _isLoading = true;
   bool _isLoadingMore = false;
   bool _hasMore = true;
-  int _page = 1;
+  int _page = 0;
   int _total = 0;
   static const _limit = 20;
 
@@ -32,14 +32,14 @@ class _CommunityMembersScreenState extends State<CommunityMembersScreen> {
     setState(() { _isLoading = true; });
     try {
       final res = await CommunityRepository.instance
-          .getMembers(page: 1, limit: _limit);
+          .getMembers(page: 0, limit: _limit);
       if (mounted) {
         setState(() {
           _members = res.members;
           _total = res.total;
           _isLoading = false;
           _hasMore = res.members.length == _limit;
-          _page = 2;
+          _page = 1;
         });
       }
     } catch (_) {

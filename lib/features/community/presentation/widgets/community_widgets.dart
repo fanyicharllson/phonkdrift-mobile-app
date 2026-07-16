@@ -151,7 +151,7 @@ class MessageBubble extends StatelessWidget {
     required this.message,
     required this.isMine,
     required this.showAvatar,
-    required this.onReply,
+    required this.onLongPress,
     required this.myUserId,
     this.badge = '',
     this.isPending = false,
@@ -160,7 +160,10 @@ class MessageBubble extends StatelessWidget {
   final ChatMessage message;
   final bool isMine;
   final bool showAvatar;
-  final void Function(ChatMessage) onReply;
+
+  /// Long-press shows an action sheet (reply/copy/report) — the host screen
+  /// owns that UI, this widget just reports which message was pressed.
+  final void Function(ChatMessage) onLongPress;
   final String myUserId;
   final String badge;
   final bool isPending;
@@ -168,7 +171,7 @@ class MessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onLongPress: () => onReply(message),
+      onLongPress: () => onLongPress(message),
       child: Padding(
         padding: EdgeInsets.only(
           left: isMine ? 60 : 12,

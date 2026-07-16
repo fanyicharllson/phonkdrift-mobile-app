@@ -138,7 +138,7 @@ class CommunityRepository {
   }
 
   Future<GetCommunityMembersResponse> getMembers({
-    int page = 1,
+    int page = 0,
     int limit = 20,
   }) async {
     try {

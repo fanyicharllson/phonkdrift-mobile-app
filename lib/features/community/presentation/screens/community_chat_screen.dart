@@ -96,8 +96,10 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
       );
       if (mounted) {
         setState(() {
-          // Backend returns newest first, reverse for display
-          _messages = msgs.reversed.toList();
+          // Backend already returns these oldest-first (chronological) —
+          // it internally reverses its own DESC pagination query before
+          // responding, so no reversal is needed (or wanted) here.
+          _messages = msgs;
           _isLoadingHistory = false;
           _hasMore = msgs.length == 30;
         });
@@ -117,7 +119,8 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
       final older = await _repo.getMessages(beforeTimestamp: oldest, limit: 30);
       if (mounted) {
         setState(() {
-          _messages = [...older.reversed.toList(), ..._messages];
+          // Already oldest-first within the batch — see _loadHistory.
+          _messages = [...older, ..._messages];
           _isLoadingMore = false;
           _hasMore = older.length == 30;
         });
@@ -380,10 +383,8 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
                                 myUserId: _myUserId,
                                 badge: _memberBadges[msg.userId] ?? '',
                                 isPending: _pendingMessageIds.contains(msg.id),
-                                onReply: (m) {
-                                  setState(() => _replyingTo = m);
-                                  _focusNode.requestFocus();
-                                },
+                                onLongPress: (m) =>
+                                    _showMessageActions(m, isMine),
                               ),
                             ),
                           ],
@@ -699,6 +700,102 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showMessageActions(ChatMessage msg, bool isMine) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.bgSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetCtx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _ActionTile(
+                icon: Icons.reply_rounded,
+                label: 'Reply',
+                onTap: () {
+                  Navigator.of(sheetCtx).pop();
+                  setState(() => _replyingTo = msg);
+                  _focusNode.requestFocus();
+                },
+              ),
+              _ActionTile(
+                icon: Icons.copy_rounded,
+                label: 'Copy Text',
+                onTap: () {
+                  Navigator.of(sheetCtx).pop();
+                  Clipboard.setData(ClipboardData(text: msg.content));
+                  PhonkToast.show(
+                    context,
+                    message: 'Copied to clipboard',
+                    type: ToastType.success,
+                  );
+                },
+              ),
+              if (!isMine)
+                _ActionTile(
+                  icon: Icons.flag_outlined,
+                  label: 'Report',
+                  color: AppColors.phonkRed,
+                  onTap: () {
+                    Navigator.of(sheetCtx).pop();
+                    PhonkToast.show(
+                      context,
+                      message: 'Reporting is coming soon.',
+                      type: ToastType.info,
+                    );
+                  },
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Message Action Tile ─────────────────────────────────────────────────────────
+class _ActionTile extends StatelessWidget {
+  const _ActionTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final tileColor = color ?? AppColors.textPrimary;
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        child: Row(
+          children: [
+            Icon(icon, color: tileColor, size: 20),
+            const SizedBox(width: 16),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: tileColor,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
