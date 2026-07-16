@@ -129,7 +129,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         });
         PhonkToast.show(
           context,
-          message: 'Profile picture updated.',
+          message: 'Profile picture updated, it may take a few minutes to reflect.',
           type: ToastType.success,
         );
       }
