@@ -10,21 +10,28 @@ class CommunityErrorState extends StatelessWidget {
     super.key,
     required this.message,
     required this.onRetry,
+    this.onBack,
   });
 
   final String message;
   final VoidCallback onRetry;
 
+  /// Shown as a real back arrow in the top-left — this screen is embedded
+  /// (not pushed), so there's no route to pop back to on its own.
+  final VoidCallback? onBack;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bgDeep,
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+      body: Stack(
+        children: [
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
               Container(
                 width: 84,
                 height: 84,
@@ -101,9 +108,38 @@ class CommunityErrorState extends StatelessWidget {
                   ),
                 ),
               ),
-            ],
+                ],
+              ),
+            ),
           ),
-        ),
+          if (onBack != null)
+            Positioned(
+              top: 0,
+              left: 0,
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: GestureDetector(
+                    onTap: onBack,
+                    child: Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: AppColors.bgSurface,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.borderSubtle),
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: AppColors.textPrimary,
+                        size: 16,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

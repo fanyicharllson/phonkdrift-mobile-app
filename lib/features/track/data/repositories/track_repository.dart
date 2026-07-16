@@ -324,6 +324,25 @@ class TrackRepository {
     }
   }
 
-  String _grpcMessage(GrpcError e) =>
-      e.message?.isNotEmpty == true ? e.message! : 'Something went wrong';
+  // Transport-level failures carry raw connection details in e.message —
+  // sometimes literally the backend host:port — which must never reach the
+  // UI. Only codes the backend uses for intentional, user-safe business
+  // errors pass their message through.
+  String _grpcMessage(GrpcError e) {
+    switch (e.code) {
+      case StatusCode.unavailable:
+      case StatusCode.deadlineExceeded:
+      case StatusCode.internal:
+      case StatusCode.unknown:
+      case StatusCode.aborted:
+      case StatusCode.cancelled:
+        return "Couldn't reach the server. Check your connection and try again.";
+      case StatusCode.unauthenticated:
+        return 'Your session has expired. Please log in again.';
+      default:
+        return e.message?.isNotEmpty == true
+            ? e.message!
+            : 'Something went wrong';
+    }
+  }
 }

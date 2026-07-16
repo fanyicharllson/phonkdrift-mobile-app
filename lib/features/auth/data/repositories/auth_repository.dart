@@ -389,6 +389,23 @@ class AuthRepository {
   Future<void> logout() => _storage.clearSession();
   Future<String?> getPendingEmail() => _storage.getPendingEmail();
 
-  String _grpcMessage(GrpcError e) =>
-      e.message?.isNotEmpty == true ? e.message! : 'Something went wrong';
+  // Transport-level failures carry raw connection details in e.message —
+  // sometimes literally the backend host:port — which must never reach the
+  // UI. Only codes the backend uses for intentional, user-safe business
+  // errors (bad credentials, validation, etc.) pass their message through.
+  String _grpcMessage(GrpcError e) {
+    switch (e.code) {
+      case StatusCode.unavailable:
+      case StatusCode.deadlineExceeded:
+      case StatusCode.internal:
+      case StatusCode.unknown:
+      case StatusCode.aborted:
+      case StatusCode.cancelled:
+        return "Couldn't reach the server. Check your connection and try again.";
+      default:
+        return e.message?.isNotEmpty == true
+            ? e.message!
+            : 'Something went wrong';
+    }
+  }
 }

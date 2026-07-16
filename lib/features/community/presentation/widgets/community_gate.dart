@@ -104,6 +104,7 @@ class _CommunityGateState extends State<CommunityGate>
             ? _errorMessage
             : 'Something went wrong. Check your connection and try again.',
         onRetry: _refresh,
+        onBack: widget.onBack,
       ),
     };
   }
