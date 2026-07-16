@@ -8,11 +8,19 @@ import '../../data/repositories/community_repository.dart';
 import 'community_guidelines_screen.dart';
 
 class CommunityOnboardingScreen extends StatefulWidget {
-  const CommunityOnboardingScreen({super.key, required this.onJoined});
+  const CommunityOnboardingScreen({
+    super.key,
+    required this.onJoined,
+    this.onBack,
+  });
 
   /// Called once the user has joined AND accepted the guidelines — the host
   /// (CommunityGate) uses this to switch straight to the chat screen.
   final VoidCallback onJoined;
+
+  /// Shown as a real back arrow in the top-left — this screen is embedded
+  /// (not pushed), so there's no route to pop back to on its own.
+  final VoidCallback? onBack;
 
   @override
   State<CommunityOnboardingScreen> createState() =>
@@ -126,6 +134,34 @@ class _CommunityOnboardingScreenState extends State<CommunityOnboardingScreen>
             size: 250,
             opacity: 0.1,
           ),
+
+          if (widget.onBack != null)
+            Positioned(
+              top: 0,
+              left: 0,
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: GestureDetector(
+                    onTap: widget.onBack,
+                    child: Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: AppColors.bgSurface,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.borderSubtle),
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: AppColors.textPrimary,
+                        size: 16,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
 
           SafeArea(
             child: FadeTransition(

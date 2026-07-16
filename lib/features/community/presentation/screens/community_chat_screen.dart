@@ -12,12 +12,16 @@ import '../widgets/community_widgets.dart';
 import 'community_members_screen.dart';
 
 class CommunityChatScreen extends StatefulWidget {
-  const CommunityChatScreen({super.key, this.onLeft});
+  const CommunityChatScreen({super.key, this.onLeft, this.onBack});
 
   /// Called after successfully leaving the community. This screen is shown
   /// embedded (not pushed) by CommunityGate, so there's no route to pop —
   /// the host uses this to switch back to the rejoin prompt instead.
   final VoidCallback? onLeft;
+
+  /// Shown as a real back arrow in the header — this screen is embedded
+  /// (not pushed), so there's no route to pop back to on its own.
+  final VoidCallback? onBack;
 
   @override
   State<CommunityChatScreen> createState() => _CommunityChatScreenState();
@@ -412,6 +416,19 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
       ),
       child: Row(
         children: [
+          if (widget.onBack != null) ...[
+            GestureDetector(
+              onTap: widget.onBack,
+              child: const Padding(
+                padding: EdgeInsets.only(right: 8),
+                child: Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: AppColors.textPrimary,
+                  size: 20,
+                ),
+              ),
+            ),
+          ],
           // Community icon
           Container(
             width: 40,

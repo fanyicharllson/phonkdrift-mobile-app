@@ -14,7 +14,11 @@ enum _CommunityStatus { loading, member, needsOnboarding, needsRejoin, error }
 /// pushed), so joining/leaving never disturbs the rest of the app's
 /// navigation stack or the mini player.
 class CommunityGate extends StatefulWidget {
-  const CommunityGate({super.key});
+  const CommunityGate({super.key, this.onBack});
+
+  /// Lets every sub-screen show a real back arrow that returns to the rest
+  /// of the app (Home tab) instead of having nothing to go back to.
+  final VoidCallback? onBack;
 
   @override
   State<CommunityGate> createState() => _CommunityGateState();
@@ -60,12 +64,17 @@ class _CommunityGateState extends State<CommunityGate> {
   Widget build(BuildContext context) {
     return switch (_status) {
       _CommunityStatus.loading => const CommunityLoadingState(),
-      _CommunityStatus.member => CommunityChatScreen(onLeft: _refresh),
+      _CommunityStatus.member => CommunityChatScreen(
+        onLeft: _refresh,
+        onBack: widget.onBack,
+      ),
       _CommunityStatus.needsRejoin => CommunityRejoinPrompt(
         onRejoined: _refresh,
+        onBack: widget.onBack,
       ),
       _CommunityStatus.needsOnboarding => CommunityOnboardingScreen(
         onJoined: _refresh,
+        onBack: widget.onBack,
       ),
       _CommunityStatus.error => CommunityErrorState(
         message: _errorMessage.isNotEmpty

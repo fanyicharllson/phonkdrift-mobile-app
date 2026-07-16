@@ -204,9 +204,47 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     super.dispose();
   }
 
+  // ── Back button handling ────────────────────────────────────────────────────
+  // Tabs aren't separate routes, so there's normally nothing for the system
+  // back button to pop — Android would just kill the app. Instead: from any
+  // non-Home tab, go back to Home first (like closing a WhatsApp chat back to
+  // the chat list); only from Home itself does back start the TikTok-style
+  // "press again to exit" flow.
+  DateTime? _lastBackPressTime;
+
+  Future<void> _handleBackPress() async {
+    if (_selectedTab != 0) {
+      _selectTab(0);
+      return;
+    }
+
+    final now = DateTime.now();
+    final withinWindow =
+        _lastBackPressTime != null &&
+        now.difference(_lastBackPressTime!) < const Duration(seconds: 2);
+
+    if (withinWindow) {
+      SystemNavigator.pop();
+      return;
+    }
+
+    _lastBackPressTime = now;
+    PhonkToast.show(
+      context,
+      message: 'Press back again to exit',
+      type: ToastType.info,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleBackPress();
+      },
+      child: Scaffold(
       key: _scaffoldKey,
       backgroundColor: AppColors.bgDeep,
       extendBody: true,
@@ -259,7 +297,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             children: [
               _buildHomePage(),
               SearchScreen(controller: _controller),
-              const CommunityGate(),
+              CommunityGate(onBack: () => _selectTab(0)),
               LibraryScreen(controller: _controller),
               const ProfileScreen(),
             ],
@@ -288,6 +326,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ),
           ),
         ],
+      ),
       ),
     );
   }

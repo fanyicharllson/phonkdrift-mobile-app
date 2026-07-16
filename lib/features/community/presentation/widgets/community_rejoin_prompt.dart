@@ -10,8 +10,16 @@ import '../../data/repositories/community_repository.dart';
 /// seen. Guidelines were already accepted the first time, so this skips
 /// straight back into the community once rejoined.
 class CommunityRejoinPrompt extends StatefulWidget {
-  const CommunityRejoinPrompt({super.key, required this.onRejoined});
+  const CommunityRejoinPrompt({
+    super.key,
+    required this.onRejoined,
+    this.onBack,
+  });
   final VoidCallback onRejoined;
+
+  /// Shown as a real back arrow in the top-left — this screen is embedded
+  /// (not pushed), so there's no route to pop back to on its own.
+  final VoidCallback? onBack;
 
   @override
   State<CommunityRejoinPrompt> createState() => _CommunityRejoinPromptState();
@@ -43,7 +51,9 @@ class _CommunityRejoinPromptState extends State<CommunityRejoinPrompt> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bgDeep,
-      body: LayoutBuilder(
+      body: Stack(
+        children: [
+          LayoutBuilder(
         builder: (context, constraints) {
           return SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
@@ -152,6 +162,35 @@ class _CommunityRejoinPromptState extends State<CommunityRejoinPrompt> {
             ),
           );
         },
+          ),
+          if (widget.onBack != null)
+            Positioned(
+              top: 0,
+              left: 0,
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: GestureDetector(
+                    onTap: widget.onBack,
+                    child: Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: AppColors.bgSurface,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.borderSubtle),
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: AppColors.textPrimary,
+                        size: 16,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
