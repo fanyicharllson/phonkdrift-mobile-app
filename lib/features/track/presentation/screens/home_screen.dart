@@ -710,24 +710,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ),
           ),
           if (showSeeAll)
-            GestureDetector(
-              onTap: onSeeAll,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(seeAllIcon, size: 16, color: AppColors.phonkRed),
-                  const SizedBox(width: 4),
-                  Text(
-                    seeAllLabel,
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      color: AppColors.phonkRed,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _SeeAllButton(label: seeAllLabel, icon: seeAllIcon, onTap: onSeeAll),
         ],
       ),
     );
@@ -1189,6 +1172,63 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
+}
+
+// ── See All button — press-scale + haptic so a tap actually reads as one ────
+class _SeeAllButton extends StatefulWidget {
+  const _SeeAllButton({required this.label, required this.icon, this.onTap});
+  final String label;
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  @override
+  State<_SeeAllButton> createState() => _SeeAllButtonState();
+}
+
+class _SeeAllButtonState extends State<_SeeAllButton> {
+  bool _pressed = false;
+
+  void _setPressed(bool value) => setState(() => _pressed = value);
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => _setPressed(true),
+      onTapUp: (_) => _setPressed(false),
+      onTapCancel: () => _setPressed(false),
+      onTap: () {
+        HapticFeedback.selectionClick();
+        widget.onTap?.call();
+      },
+      child: AnimatedScale(
+        scale: _pressed ? 0.92 : 1.0,
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+        child: AnimatedOpacity(
+          opacity: _pressed ? 0.6 : 1.0,
+          duration: const Duration(milliseconds: 120),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(widget.icon, size: 16, color: AppColors.phonkRed),
+                const SizedBox(width: 4),
+                Text(
+                  widget.label,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: AppColors.phonkRed,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 // ── Smart Error Tile ──────────────────────────────────────────────────────────

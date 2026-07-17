@@ -986,8 +986,18 @@ class _StatsTickerState extends State<_StatsTicker>
       child: ClipRect(
         child: AnimatedBuilder(
           animation: _align,
-          builder: (context, child) =>
-              Align(alignment: _align.value, child: child),
+          // OverflowBox (not Align) — the ticker row is naturally wider
+          // than the pill on longer counts, and Align alone still forces
+          // Flex to lay the Row out within the pill's width, triggering a
+          // RenderFlex overflow warning. OverflowBox explicitly lets the
+          // child size itself beyond the incoming constraints; ClipRect
+          // then just clips whatever spills past the pill's edges.
+          builder: (context, child) => OverflowBox(
+            minWidth: 0,
+            maxWidth: double.infinity,
+            alignment: _align.value,
+            child: child,
+          ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
