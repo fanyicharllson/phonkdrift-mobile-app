@@ -4,7 +4,12 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 
 class CommunityGuidelinesScreen extends StatefulWidget {
-  const CommunityGuidelinesScreen({super.key});
+  const CommunityGuidelinesScreen({super.key, this.standalone = false});
+
+  /// True when opened as a reference from Settings rather than as part of
+  /// the join flow — shows a back arrow instead of the "Enter the Drift"
+  /// CTA, since there's no join action to complete here.
+  final bool standalone;
 
   @override
   State<CommunityGuidelinesScreen> createState() =>
@@ -39,6 +44,10 @@ class _CommunityGuidelinesScreenState
 
   void _enter() {
     HapticFeedback.mediumImpact();
+    if (widget.standalone) {
+      Navigator.of(context).pop();
+      return;
+    }
     // Pop back to whoever pushed us (CommunityOnboardingScreen) with a
     // result — no stack-wiping, so the app's Home screen stays alive
     // underneath and the mini player keeps playing.
@@ -105,6 +114,28 @@ class _CommunityGuidelinesScreenState
                 children: [
                   Row(
                     children: [
+                      if (widget.standalone) ...[
+                        GestureDetector(
+                          onTap: () => Navigator.of(context).pop(),
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            margin: const EdgeInsets.only(right: 10),
+                            decoration: BoxDecoration(
+                              color: AppColors.bgSurface,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppColors.borderSubtle,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.arrow_back_ios_new_rounded,
+                              color: AppColors.textPrimary,
+                              size: 16,
+                            ),
+                          ),
+                        ),
+                      ],
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 4),
@@ -220,7 +251,9 @@ class _CommunityGuidelinesScreenState
                         const SizedBox(width: 8),
                         Text(
                           _hasScrolledToBottom
-                              ? 'I Agree — Enter the Drift'
+                              ? (widget.standalone
+                                    ? 'Got it'
+                                    : 'I Agree — Enter the Drift')
                               : 'Scroll to read all rules',
                           style: GoogleFonts.inter(
                             fontSize: 15,

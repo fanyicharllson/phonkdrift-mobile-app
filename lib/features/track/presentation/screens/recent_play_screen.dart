@@ -2,133 +2,50 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/network/generated/track.pb.dart';
-import '../../../../core/widgets/phonk_toast.dart';
-import '../../data/repositories/track_repository.dart';
 import '../controllers/track_controller.dart';
 import '../widgets/track_list_row.dart';
+import '../widgets/track_options_sheet.dart';
 
-class TrendingScreen extends StatefulWidget {
-  const TrendingScreen({super.key, required this.controller, this.focusTrackId});
+/// "See All" destination for the Home screen's Recently Played section —
+/// same list already held by [TrackController] (loaded once at launch), just
+/// with room to search and no 5-item cap.
+class RecentPlayScreen extends StatefulWidget {
+  const RecentPlayScreen({super.key, required this.controller});
   final TrackController controller;
 
-  /// When set, once the list loads this screen scrolls to and briefly
-  /// highlights the matching track — used for push-notification deep links.
-  /// There's no single-track lookup endpoint on the backend, so this only
-  /// works if the track happens to be in this batch; it's a graceful no-op
-  /// otherwise (no crash, nothing weird — just an unhighlighted list).
-  final String? focusTrackId;
-
   @override
-  State<TrendingScreen> createState() => _TrendingScreenState();
+  State<RecentPlayScreen> createState() => _RecentPlayScreenState();
 }
 
-class _TrendingScreenState extends State<TrendingScreen> {
-  List<TrackMetadata> _allTracks = [];
-  List<TrackMetadata> _filtered = [];
-  bool _isLoading = true;
-  String _error = '';
+class _RecentPlayScreenState extends State<RecentPlayScreen> {
   final _searchCtrl = TextEditingController();
-  final _scrollCtrl = ScrollController();
-  String? _highlightedTrackId;
+  List<TrackMetadata> _filtered = [];
 
   @override
   void initState() {
     super.initState();
+    _filtered = widget.controller.recentTracks;
     widget.controller.addListener(_onControllerUpdate);
-    _load();
   }
 
   @override
   void dispose() {
     widget.controller.removeListener(_onControllerUpdate);
     _searchCtrl.dispose();
-    _scrollCtrl.dispose();
     super.dispose();
   }
 
   void _onControllerUpdate() {
     if (!mounted) return;
-    setState(() {});
-    if (widget.controller.playError.isNotEmpty) {
-      PhonkToast.show(
-        context,
-        message: widget.controller.playError,
-        type: ToastType.error,
-      );
-    }
-  }
-
-  Future<void> _load() async {
-    // Show the cached batch instantly (if we have one from earlier this
-    // session) instead of a fresh spinner every time this screen is
-    // reopened, then quietly refresh in the background.
-    final cached = TrackRepository.instance.cachedForYouTracks;
-    final hasCache = cached != null && cached.isNotEmpty;
-    setState(() {
-      _isLoading = !hasCache;
-      _error = '';
-      if (hasCache) {
-        _allTracks = cached;
-        _filtered = cached;
-      }
-    });
-    if (hasCache) _scrollToFocusTrackIfAny();
-
-    try {
-      final res = await TrackRepository.instance.getForYouTracks(limit: 50);
-      if (mounted) {
-        setState(() {
-          _allTracks = res;
-          _filtered = res;
-          _isLoading = false;
-        });
-        if (!hasCache) _scrollToFocusTrackIfAny();
-      }
-    } catch (e) {
-      if (mounted) {
-        // A cached list already on screen is still useful even if the
-        // refresh failed — only show the error state if we had nothing.
-        setState(() {
-          if (!hasCache) _error = e.toString();
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  void _scrollToFocusTrackIfAny() {
-    final focusId = widget.focusTrackId;
-    if (focusId == null || focusId.isEmpty) return;
-    final index = _filtered.indexWhere((t) => t.trackId == focusId);
-    if (index == -1) return; // not in this batch — quietly do nothing
-
-    setState(() => _highlightedTrackId = focusId);
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_scrollCtrl.hasClients) return;
-      final maxExtent = _scrollCtrl.position.maxScrollExtent;
-      if (maxExtent <= 0) return;
-      // Proportional rather than a guessed per-item pixel height — stays
-      // correct regardless of actual tile height.
-      final fraction = index / _filtered.length;
-      _scrollCtrl.animateTo(
-        (fraction * maxExtent).clamp(0.0, maxExtent),
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeOutCubic,
-      );
-    });
-
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) setState(() => _highlightedTrackId = null);
-    });
+    setState(() => _onSearch(_searchCtrl.text));
   }
 
   void _onSearch(String val) {
     final q = val.trim().toLowerCase();
     setState(() {
       _filtered = q.isEmpty
-          ? _allTracks
-          : _allTracks
+          ? widget.controller.recentTracks
+          : widget.controller.recentTracks
                 .where(
                   (t) =>
                       t.title.toLowerCase().contains(q) ||
@@ -144,7 +61,6 @@ class _TrendingScreenState extends State<TrendingScreen> {
       backgroundColor: AppColors.bgDeep,
       body: Stack(
         children: [
-          // Background orb
           Positioned(
             top: -40,
             right: -60,
@@ -162,12 +78,10 @@ class _TrendingScreenState extends State<TrendingScreen> {
               ),
             ),
           ),
-
           SafeArea(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Fixed header — no SliverAppBar ────────────────────────
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                   child: Row(
@@ -191,65 +105,17 @@ class _TrendingScreenState extends State<TrendingScreen> {
                       ),
                       const SizedBox(width: 14),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 3,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.phonkRed.withValues(
-                                      alpha: 0.15,
-                                    ),
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(
-                                      color: AppColors.phonkRed.withValues(
-                                        alpha: 0.3,
-                                      ),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(
-                                        Icons.trending_up_rounded,
-                                        color: AppColors.phonkRed,
-                                        size: 12,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        'LIVE',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 9,
-                                          fontWeight: FontWeight.w800,
-                                          color: AppColors.phonkRed,
-                                          letterSpacing: 1,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Trending Phonk',
-                              style: GoogleFonts.inter(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w900,
-                                color: AppColors.textPrimary,
-                                letterSpacing: -0.8,
-                              ),
-                            ),
-                          ],
+                        child: Text(
+                          'Recently Played',
+                          style: GoogleFonts.inter(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.textPrimary,
+                            letterSpacing: -0.8,
+                          ),
                         ),
                       ),
-                      // Track count badge
-                      if (!_isLoading && _allTracks.isNotEmpty)
+                      if (widget.controller.recentTracks.isNotEmpty)
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 10,
@@ -261,7 +127,7 @@ class _TrendingScreenState extends State<TrendingScreen> {
                             border: Border.all(color: AppColors.borderSubtle),
                           ),
                           child: Text(
-                            '${_allTracks.length}',
+                            '${widget.controller.recentTracks.length}',
                             style: GoogleFonts.inter(
                               fontSize: 12,
                               color: AppColors.textSecondary,
@@ -272,10 +138,7 @@ class _TrendingScreenState extends State<TrendingScreen> {
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 14),
-
-                // ── Search bar ─────────────────────────────────────────────
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: TextField(
@@ -286,7 +149,7 @@ class _TrendingScreenState extends State<TrendingScreen> {
                     ),
                     onChanged: _onSearch,
                     decoration: InputDecoration(
-                      hintText: 'Filter trending tracks...',
+                      hintText: 'Search recently played...',
                       hintStyle: GoogleFonts.inter(
                         color: AppColors.textMuted,
                         fontSize: 14,
@@ -337,44 +200,24 @@ class _TrendingScreenState extends State<TrendingScreen> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 12),
-
-                // ── Track list ─────────────────────────────────────────────
                 Expanded(
-                  child: _isLoading
-                      ? ListView.builder(
-                          itemCount: 10,
-                          itemBuilder: (_, __) => const _ShimmerTile(),
-                        )
-                      : _error.isNotEmpty
+                  child: widget.controller.recentTracks.isEmpty
                       ? Center(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               const Icon(
-                                Icons.wifi_off_rounded,
+                                Icons.history_rounded,
                                 color: AppColors.textMuted,
                                 size: 40,
                               ),
                               const SizedBox(height: 12),
                               Text(
-                                'Could not load trending tracks.',
+                                'No recently played tracks yet.',
                                 style: GoogleFonts.inter(
                                   fontSize: 14,
                                   color: AppColors.textSecondary,
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              GestureDetector(
-                                onTap: _load,
-                                child: Text(
-                                  'Retry',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 14,
-                                    color: AppColors.phonkRed,
-                                    fontWeight: FontWeight.w700,
-                                  ),
                                 ),
                               ),
                             ],
@@ -393,9 +236,8 @@ class _TrendingScreenState extends State<TrendingScreen> {
                       : RefreshIndicator(
                           color: AppColors.phonkRed,
                           backgroundColor: AppColors.bgSurface,
-                          onRefresh: _load,
+                          onRefresh: widget.controller.loadRecentlyPlayed,
                           child: ListView.builder(
-                            controller: _scrollCtrl,
                             physics: const BouncingScrollPhysics(),
                             padding: const EdgeInsets.only(bottom: 160),
                             itemCount: _filtered.length,
@@ -406,25 +248,21 @@ class _TrendingScreenState extends State<TrendingScreen> {
                                   track.trackId;
                               return TrackListRow(
                                 track: track,
-                                showPlayCount: true,
-                                showPlayIndicator: true,
-                                leading: TrackRankBadge(
-                                  rank: _allTracks.indexOf(track) + 1,
-                                  isPlaying: isPlaying,
-                                ),
                                 isPlaying: isPlaying,
-                                isHighlighted:
-                                    track.trackId == _highlightedTrackId,
                                 isLiked: widget.controller.isLiked(
                                   track.trackId,
                                 ),
+                                showPlayIndicator: true,
                                 onTap: () => widget.controller.playTrack(
                                   track,
                                   context,
                                   queue: _filtered,
                                 ),
-                                onLike: () => widget.controller.toggleLike(
-                                  track.trackId,
+                                onMoreTap: () => showTrackOptionsSheet(
+                                  context,
+                                  widget.controller,
+                                  track,
+                                  queue: _filtered,
                                 ),
                               );
                             },
@@ -435,21 +273,6 @@ class _TrendingScreenState extends State<TrendingScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ShimmerTile extends StatelessWidget {
-  const _ShimmerTile();
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-      height: 64,
-      decoration: BoxDecoration(
-        color: AppColors.bgSurface,
-        borderRadius: BorderRadius.circular(10),
       ),
     );
   }

@@ -9,7 +9,7 @@ import '../../../../core/widgets/phonk_error_banner.dart';
 import '../../../../core/widgets/phonk_toast.dart';
 import '../../data/repositories/track_repository.dart';
 import '../controllers/track_controller.dart';
-import '../widgets/playing_equalizer.dart';
+import '../widgets/track_list_row.dart';
 import 'playlist_detail_screen.dart';
 
 class LibraryScreen extends StatefulWidget {
@@ -212,29 +212,12 @@ class _LibraryScreenState extends State<LibraryScreen>
                 // â”€â”€ Stats strip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Row(
-                    children: [
-                      _StatStrip(
-                        icon: Icons.favorite_rounded,
-                        value: '${_likedTracks.length}',
-                        label: 'Liked',
-                        color: AppColors.phonkRed,
-                      ),
-                      const SizedBox(width: 12),
-                      _StatStrip(
-                        icon: Icons.queue_music_rounded,
-                        value: '${_playlists.length}',
-                        label: 'Playlists',
-                        color: const Color(0xFF6B00FF),
-                      ),
-                      const SizedBox(width: 12),
-                      _StatStrip(
-                        icon: Icons.library_music_rounded,
-                        value: '${_likedTracks.length + _playlists.fold<int>(0, (s, p) => s + p.trackCount)}',
-                        label: 'Total',
-                        color: AppColors.textSecondary,
-                      ),
-                    ],
+                  child: _StatsTicker(
+                    likedCount: _likedTracks.length,
+                    playlistCount: _playlists.length,
+                    totalCount:
+                        _likedTracks.length +
+                        _playlists.fold<int>(0, (s, p) => s + p.trackCount),
                   ),
                 ),
 
@@ -391,14 +374,18 @@ class _LikedTracksTab extends StatelessWidget {
             physics: const BouncingScrollPhysics(),
             padding: const EdgeInsets.only(bottom: 160),
             itemCount: tracks.length,
-            itemBuilder: (_, i) => _LibraryTrackTile(
-              track: tracks[i],
-              index: i + 1,
-              isPlaying: controller.nowPlaying?.trackId == tracks[i].trackId,
-              isLiked: true,
-              onTap: () => controller.playTrack(tracks[i], context, queue: tracks),
-              onLike: () => controller.toggleLike(tracks[i].trackId),
-            ),
+            itemBuilder: (_, i) {
+              final track = tracks[i];
+              final isPlaying = controller.nowPlaying?.trackId == track.trackId;
+              return TrackListRow(
+                track: track,
+                leading: TrackRankBadge(rank: i + 1, isPlaying: isPlaying),
+                isPlaying: isPlaying,
+                isLiked: true,
+                onTap: () => controller.playTrack(track, context, queue: tracks),
+                onLike: () => controller.toggleLike(track.trackId),
+              );
+            },
           ),
         ),
       ],
@@ -515,112 +502,6 @@ class _PlaylistsTab extends StatelessWidget {
   }
 }
 
-class _LibraryTrackTile extends StatelessWidget {
-  const _LibraryTrackTile({
-    required this.track,
-    required this.index,
-    required this.onTap,
-    required this.onLike,
-    this.isPlaying = false,
-    this.isLiked = false,
-  });
-
-  final TrackMetadata track;
-  final int index;
-  final VoidCallback onTap;
-  final VoidCallback onLike;
-  final bool isPlaying;
-  final bool isLiked;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: isPlaying
-              ? AppColors.phonkRed.withValues(alpha: 0.07)
-              : AppColors.bgSurface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isPlaying
-                ? AppColors.phonkRed.withValues(alpha: 0.3)
-                : AppColors.borderSubtle,
-          ),
-        ),
-        child: Row(
-          children: [
-            // Index or equalizer
-            SizedBox(
-              width: 28,
-              child: isPlaying
-                  ? const PlayingEqualizer(size: 18)
-                  : Text('$index',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        color: AppColors.textMuted,
-                        fontWeight: FontWeight.w600,
-                      )),
-            ),
-            const SizedBox(width: 10),
-            // Thumbnail
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: track.thumbnailUrl.isNotEmpty
-                  ? CachedNetworkImage(
-                      imageUrl: track.thumbnailUrl,
-                      width: 46, height: 46,
-                      fit: BoxFit.cover,
-                      errorWidget: (_, __, ___) => _Placeholder(size: 46),
-                    )
-                  : _Placeholder(size: 46),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(track.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      )),
-                  const SizedBox(height: 2),
-                  Text(track.artistName,
-                      style: GoogleFonts.inter(
-                        fontSize: 11, color: AppColors.textMuted,
-                      )),
-                ],
-              ),
-            ),
-            Text(track.duration,
-                style: GoogleFonts.inter(
-                  fontSize: 11, color: AppColors.textMuted,
-                )),
-            const SizedBox(width: 10),
-            GestureDetector(
-              onTap: () {
-                HapticFeedback.mediumImpact();
-                onLike();
-              },
-              child: Icon(
-                isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                color: isLiked ? AppColors.phonkRed : AppColors.textMuted,
-                size: 18,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 
 class _PlaylistCard extends StatelessWidget {
@@ -1019,44 +900,119 @@ class _CreatePlaylistSheetState extends State<_CreatePlaylistSheet> {
   }
 }
 
-class _StatStrip extends StatelessWidget {
-  const _StatStrip({
-    required this.icon,
-    required this.value,
-    required this.label,
-    required this.color,
+/// Compact one-line stats bar replacing three boxy stat cards — a single
+/// "12 liked · 4 playlists · 38 tracks total" strip whose content gently
+/// glides left-to-right and back, instead of eating a whole row of vertical
+/// space for three numbers.
+class _StatsTicker extends StatefulWidget {
+  const _StatsTicker({
+    required this.likedCount,
+    required this.playlistCount,
+    required this.totalCount,
   });
 
-  final IconData icon;
-  final String value;
-  final String label;
-  final Color color;
+  final int likedCount;
+  final int playlistCount;
+  final int totalCount;
+
+  @override
+  State<_StatsTicker> createState() => _StatsTickerState();
+}
+
+class _StatsTickerState extends State<_StatsTicker>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<Alignment> _align;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 5),
+    )..repeat(reverse: true);
+    _align = AlignmentTween(
+      begin: Alignment.centerLeft,
+      end: Alignment.centerRight,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Widget _dot() => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 12),
+    child: Container(
+      width: 3,
+      height: 3,
+      decoration: const BoxDecoration(
+        color: AppColors.borderSubtle,
+        shape: BoxShape.circle,
+      ),
+    ),
+  );
+
+  Widget _stat(IconData icon, String value, String label, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 13, color: color),
+        const SizedBox(width: 6),
+        Text(
+          '$value $label',
+          style: GoogleFonts.inter(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: AppColors.bgSurface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.borderSubtle),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 18),
-            const SizedBox(height: 4),
-            Text(value,
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.textPrimary,
-                )),
-            Text(label,
-                style: GoogleFonts.inter(
-                  fontSize: 11, color: AppColors.textMuted,
-                )),
-          ],
+    return Container(
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.bgSurface,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: AppColors.borderSubtle),
+      ),
+      child: ClipRect(
+        child: AnimatedBuilder(
+          animation: _align,
+          builder: (context, child) =>
+              Align(alignment: _align.value, child: child),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _stat(
+                Icons.favorite_rounded,
+                '${widget.likedCount}',
+                'liked',
+                AppColors.phonkRed,
+              ),
+              _dot(),
+              _stat(
+                Icons.queue_music_rounded,
+                '${widget.playlistCount}',
+                'playlists',
+                const Color(0xFF6B00FF),
+              ),
+              _dot(),
+              _stat(
+                Icons.library_music_rounded,
+                '${widget.totalCount}',
+                'tracks total',
+                AppColors.textSecondary,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1072,20 +1028,6 @@ class _PlaylistCoverPlaceholder extends StatelessWidget {
         child: Icon(Icons.queue_music_rounded,
             color: AppColors.textMuted, size: 32),
       ),
-    );
-  }
-}
-
-class _Placeholder extends StatelessWidget {
-  const _Placeholder({required this.size});
-  final double size;
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size, height: size,
-      color: AppColors.bgElevated,
-      child: const Icon(Icons.music_note_rounded,
-          color: AppColors.textMuted, size: 20),
     );
   }
 }

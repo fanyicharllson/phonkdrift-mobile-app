@@ -13,6 +13,7 @@ import '../../../../core/widgets/phonk_error_banner.dart';
 import '../../../../core/widgets/phonk_toast.dart';
 import '../../data/repositories/auth_repository.dart';
 import 'login_screen.dart';
+import 'settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -304,7 +305,11 @@ class _ProfileScreenState extends State<ProfileScreen>
                               const Spacer(),
                               // Settings icon
                               GestureDetector(
-                                onTap: () {},
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => const SettingsScreen(),
+                                  ),
+                                ),
                                 child: Container(
                                   width: 38,
                                   height: 38,

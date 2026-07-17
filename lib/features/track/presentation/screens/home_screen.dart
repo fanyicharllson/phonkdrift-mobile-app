@@ -4,25 +4,28 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/network/generated/track.pb.dart';
 import '../../../../core/utils/push_notification_service.dart';
 import '../../../../core/utils/storage_helper.dart';
+import '../../../../core/utils/update_service.dart';
 import '../../../../core/widgets/phonk_toast.dart';
 import '../controllers/track_controller.dart';
 import 'trending_screen.dart';
 import '../../../auth/presentation/screens/login_screen.dart';
 import '../../../auth/presentation/screens/profile_screen.dart';
+import '../../../auth/presentation/screens/settings_screen.dart';
 import 'player_screen.dart';
 import 'search_screen.dart';
 import 'library_screen.dart';
-import '../widgets/add_to_playlist_sheet.dart';
 import '../widgets/app_sidebar.dart';
 import '../widgets/feedback_prompt_sheet.dart';
 import '../widgets/play_pause_button.dart';
 import '../widgets/playing_equalizer.dart';
+import '../widgets/track_list_row.dart';
+import '../widgets/track_options_sheet.dart';
+import '../widgets/update_prompt.dart';
+import 'recent_play_screen.dart';
 import '../../../community/presentation/widgets/community_gate.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -46,6 +49,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   String _avatarUrl = '';
   int _selectedTab = 0;
   int _selectedCategory = 0;
+  UpdateInfo? _updateInfo;
 
   final List<String> _categories = ['All', 'Trending', 'New', 'Underground'];
 
@@ -70,6 +74,23 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _handlePushEvent(pendingEvent);
       });
+    }
+
+    UpdateService.instance.listenable.addListener(_onUpdateAvailable);
+    // Covers the case where main.dart's fire-and-forget check already
+    // resolved before this screen (and the listener above) existed.
+    _onUpdateAvailable();
+  }
+
+  void _onUpdateAvailable() {
+    final info = UpdateService.instance.pending;
+    if (info == null || !mounted) return;
+    if (info.mandatory) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) showMandatoryUpdateDialog(context, info);
+      });
+    } else {
+      setState(() => _updateInfo = info);
     }
   }
 
@@ -154,7 +175,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       // Flip the flag immediately so rapid notifyListeners() ticks
       // (position updates fire many times a second) can't double-trigger.
       _controller.markFeedbackPrompted();
-      showFeedbackPromptSheet(context);
+      StorageHelper.instance.getFeedbackPromptsEnabled().then((enabled) {
+        if (enabled && mounted) showFeedbackPromptSheet(context);
+      });
     }
   }
 
@@ -203,6 +226,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _pageController.dispose();
     _searchDebounce?.cancel();
     _pushEventSub?.cancel();
+    UpdateService.instance.listenable.removeListener(_onUpdateAvailable);
     _searchCtrl.dispose();
     _controller.dispose();
     super.dispose();
@@ -252,7 +276,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       key: _scaffoldKey,
       backgroundColor: AppColors.bgDeep,
       extendBody: true,
-      endDrawer: AppSidebar(onProfileTap: () => _selectTab(4)),
+      endDrawer: AppSidebar(
+        onProfileTap: () => _selectTab(4),
+        onSettingsTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const SettingsScreen()),
+        ),
+      ),
       body: Stack(
         children: [
           // ── Background glow orbs ───────────────────────────────────────
@@ -327,6 +356,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                if (_updateInfo != null)
+                  UpdateBanner(
+                    info: _updateInfo!,
+                    onDismiss: () => setState(() => _updateInfo = null),
+                  ),
                 if (_controller.hasNowPlaying) _buildMiniPlayer(),
                 _buildFloatingNav(),
               ],
@@ -371,7 +405,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ),
             SliverToBoxAdapter(child: _buildForYouSection()),
             SliverToBoxAdapter(
-              child: _buildSectionHeader('Recently Played', showSeeAll: true),
+              child: _buildSectionHeader(
+                'Recently Played',
+                showSeeAll: true,
+                onSeeAll: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => RecentPlayScreen(controller: _controller),
+                  ),
+                ),
+              ),
             ),
             _buildRecentlyPlayed(),
             const SliverToBoxAdapter(child: SizedBox(height: 180)),
@@ -740,8 +782,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               context,
               queue: _controller.forYouTracks,
             ),
-            onOptionsTap: () =>
-                _showTrackOptions(track, queue: _controller.forYouTracks),
+            onOptionsTap: () => showTrackOptionsSheet(
+              context,
+              _controller,
+              track,
+              queue: _controller.forYouTracks,
+            ),
           );
         },
       ),
@@ -769,26 +815,28 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
 
     return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (_, i) => _RecentTrackTile(
-          track: _controller.recentTracks[i],
-          isPlaying:
-              _controller.nowPlaying?.trackId ==
-              _controller.recentTracks[i].trackId,
+      delegate: SliverChildBuilderDelegate((_, i) {
+        final track = _controller.recentTracks[i];
+        final isPlaying = _controller.nowPlaying?.trackId == track.trackId;
+        return TrackListRow(
+          track: track,
+          isPlaying: isPlaying,
+          isLiked: _controller.isLiked(track.trackId),
+          showPlayIndicator: true,
           onTap: () => _controller.playTrack(
-            _controller.recentTracks[i],
+            track,
             context,
             queue: _controller.recentTracks,
           ),
-          onOptionsTap: () => _openTrackOptions(
-            _controller.recentTracks[i],
+          onLike: () => _controller.toggleLike(track.trackId),
+          onMoreTap: () => showTrackOptionsSheet(
+            context,
+            _controller,
+            track,
             queue: _controller.recentTracks,
           ),
-        ),
-        childCount: _controller.recentTracks.length > 5
-            ? 5
-            : _controller.recentTracks.length,
-      ),
+        );
+      }, childCount: _controller.recentTracks.length > 5 ? 5 : _controller.recentTracks.length),
     );
   }
 
@@ -1141,92 +1189,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
-  // ── Track options bottom sheet ────────────────────────────────────────────
-  Future<void> _showTrackOptions(
-    TrackMetadata track, {
-    List<TrackMetadata>? queue,
-  }) => _openTrackOptions(track, queue: queue);
-
-  Future<void> _openTrackOptions(
-    TrackMetadata track, {
-    List<TrackMetadata>? queue,
-  }) async {
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: AppColors.bgSurface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (sheetCtx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _TrackOptionTile(
-                icon: Icons.play_arrow_rounded,
-                label: 'Play',
-                onTap: () {
-                  Navigator.of(sheetCtx).pop();
-                  _controller.playTrack(track, context, queue: queue);
-                },
-              ),
-              _TrackOptionTile(
-                icon: _controller.isLiked(track.trackId)
-                    ? Icons.favorite_rounded
-                    : Icons.favorite_border_rounded,
-                label: _controller.isLiked(track.trackId) ? 'Unlike' : 'Like',
-                onTap: () {
-                  Navigator.of(sheetCtx).pop();
-                  _toggleLike(track);
-                },
-              ),
-              _TrackOptionTile(
-                icon: Icons.playlist_add_rounded,
-                label: 'Add to Playlist',
-                onTap: () {
-                  Navigator.of(sheetCtx).pop();
-                  showAddToPlaylistSheet(context, track: track);
-                },
-              ),
-              if (track.originalYoutubeId.isNotEmpty)
-                _TrackOptionTile(
-                  icon: Icons.open_in_new_rounded,
-                  label: 'Open in YouTube',
-                  onTap: () {
-                    Navigator.of(sheetCtx).pop();
-                    launchUrl(
-                      Uri.parse(
-                        'https://www.youtube.com/watch?v=${track.originalYoutubeId}',
-                      ),
-                      mode: LaunchMode.externalApplication,
-                    );
-                  },
-                ),
-              _TrackOptionTile(
-                icon: Icons.share_rounded,
-                label: 'Share',
-                onTap: () {
-                  Navigator.of(sheetCtx).pop();
-                  final youtubeUrl = track.originalYoutubeId.isNotEmpty
-                      ? '\nhttps://www.youtube.com/watch?v=${track.originalYoutubeId}'
-                      : '';
-                  Share.share(
-                    '${track.title} by ${track.artistName}$youtubeUrl',
-                  );
-                },
-              ),
-              _TrackOptionTile(
-                icon: Icons.close_rounded,
-                label: 'Dismiss',
-                onTap: () => Navigator.of(sheetCtx).pop(),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 // ── Smart Error Tile ──────────────────────────────────────────────────────────
@@ -1616,102 +1578,6 @@ String _formatCount(int count) {
   return '$count';
 }
 
-// ── Recently Played Tile ──────────────────────────────────────────────────────
-class _RecentTrackTile extends StatelessWidget {
-  const _RecentTrackTile({
-    required this.track,
-    required this.onTap,
-    required this.onOptionsTap,
-    this.isPlaying = false,
-  });
-  final TrackMetadata track;
-  final VoidCallback onTap;
-  final VoidCallback onOptionsTap;
-  final bool isPlaying;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 5),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: isPlaying
-              ? AppColors.phonkRed.withValues(alpha: 0.06)
-              : AppColors.bgSurface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isPlaying
-                ? AppColors.phonkRed.withValues(alpha: 0.3)
-                : AppColors.borderSubtle,
-          ),
-        ),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: track.thumbnailUrl.isNotEmpty
-                  ? CachedNetworkImage(
-                      imageUrl: track.thumbnailUrl,
-                      width: 48,
-                      height: 48,
-                      fit: BoxFit.cover,
-                      errorWidget: (_, __, ___) => _TrackPlaceholder(size: 48),
-                    )
-                  : _TrackPlaceholder(size: 48),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    track.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    track.artistName,
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Text(
-              track.duration,
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                color: AppColors.textMuted,
-              ),
-            ),
-            const SizedBox(width: 6),
-            _SourceBadge(storageUrl: track.storageUrl, compact: true),
-            const SizedBox(width: 6),
-            _TrackMoreButton(onTap: onOptionsTap),
-            const SizedBox(width: 6),
-            isPlaying
-                ? const PlayingEqualizer(size: 20)
-                : const Icon(
-                    Icons.play_circle_outline_rounded,
-                    color: AppColors.textMuted,
-                    size: 24,
-                  ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 class _TrackPlaceholder extends StatelessWidget {
@@ -1729,113 +1595,6 @@ class _TrackPlaceholder extends StatelessWidget {
         Icons.music_note_rounded,
         color: AppColors.textMuted,
         size: 24,
-      ),
-    );
-  }
-}
-
-class _TrackMoreButton extends StatelessWidget {
-  const _TrackMoreButton({required this.onTap});
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          color: AppColors.bgElevated.withValues(alpha: 0.82),
-          shape: BoxShape.circle,
-          border: Border.all(color: AppColors.borderSubtle),
-        ),
-        child: const Icon(
-          Icons.more_vert,
-          color: AppColors.textPrimary,
-          size: 18,
-        ),
-      ),
-    );
-  }
-}
-
-class _TrackOptionTile extends StatelessWidget {
-  const _TrackOptionTile({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(icon, color: AppColors.phonkRed),
-      title: Text(
-        label,
-        style: GoogleFonts.inter(
-          color: AppColors.textPrimary,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      onTap: onTap,
-    );
-  }
-}
-
-class _SourceBadge extends StatelessWidget {
-  const _SourceBadge({required this.storageUrl, this.compact = false});
-
-  final String storageUrl;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    final isCdn = storageUrl.trim().isNotEmpty;
-    final bg = isCdn
-        ? AppColors.phonkRed.withValues(alpha: 0.2)
-        : AppColors.bgElevated.withValues(alpha: 0.85);
-    final border = isCdn
-        ? AppColors.phonkRed.withValues(alpha: 0.6)
-        : AppColors.borderSubtle;
-    final color = isCdn ? AppColors.phonkRed : AppColors.textMuted;
-
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: compact ? 6 : 7,
-        vertical: compact ? 3 : 4,
-      ),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: border),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            isCdn
-                ? Icons.play_circle_filled_rounded
-                : Icons.wifi_tethering_rounded,
-            color: color,
-            size: compact ? 12 : 13,
-          ),
-          if (!compact) ...[
-            const SizedBox(width: 4),
-            Text(
-              isCdn ? 'CDN' : 'STREAM',
-              style: GoogleFonts.inter(
-                fontSize: 9,
-                fontWeight: FontWeight.w700,
-                color: color,
-                letterSpacing: 0.4,
-              ),
-            ),
-          ],
-        ],
       ),
     );
   }

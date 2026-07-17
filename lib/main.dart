@@ -7,6 +7,7 @@ import 'core/constants/app_theme.dart';
 import 'core/navigation/app_navigator.dart';
 import 'core/network/grpc_client.dart';
 import 'core/utils/push_notification_service.dart';
+import 'core/utils/update_service.dart';
 import 'core/widgets/account_ban_monitor.dart';
 import 'features/auth/presentation/screens/router_screen.dart';
 
@@ -65,6 +66,11 @@ Future<void> main() async {
 
   // Get the app on screen immediately.
   runApp(const PhonkDriftApp());
+
+  // Fire-and-forget — unauthenticated, safe before login, never blocks the
+  // UI. HomeScreen listens on UpdateService.instance.listenable and
+  // reacts once (if ever) this resolves.
+  UpdateService.instance.checkOnLaunch();
 
   // Tapped from killed state — check after first frame so navigatorKey is ready.
   WidgetsBinding.instance.addPostFrameCallback((_) async {

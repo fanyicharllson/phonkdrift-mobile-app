@@ -32,6 +32,14 @@ class TrackRepository {
   final _storage = StorageHelper.instance;
   final Map<String, StreamResponse> _streamCache = {};
 
+  // Session-lifetime cache of the last successful For You/Trending fetch.
+  // TrendingScreen is a pushed route (not a PageView tab), so it can't use
+  // AutomaticKeepAliveClientMixin to survive navigation — this repository
+  // instance is what actually lives for the whole session, so it's the
+  // right place to let reopening Trending show instantly instead of a
+  // fresh spinner every time.
+  List<TrackMetadata>? cachedForYouTracks;
+
   // ── Auth options helper — token attached to every track call ───────────────
   Future<CallOptions> _authOptions() async {
     final token = await _storage.getToken() ?? '';
@@ -47,6 +55,7 @@ class TrackRepository {
         ForYouRequest(userId: userId, limit: limit),
         options: opts,
       );
+      cachedForYouTracks = res.tracks;
       return res.tracks;
     } on GrpcError catch (e) {
       throw TrackException(_grpcMessage(e));

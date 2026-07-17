@@ -9,11 +9,18 @@ import 'feedback_prompt_sheet.dart';
 
 /// App-wide account sidebar — slides in from the right via [Scaffold.endDrawer].
 class AppSidebar extends StatefulWidget {
-  const AppSidebar({super.key, required this.onProfileTap});
+  const AppSidebar({
+    super.key,
+    required this.onProfileTap,
+    required this.onSettingsTap,
+  });
 
   /// Called (after the drawer closes) when the user taps the profile header
   /// or the "Profile" tile — lets the host screen decide how to navigate.
   final VoidCallback onProfileTap;
+
+  /// Called (after the drawer closes) when the user taps "Settings".
+  final VoidCallback onSettingsTap;
 
   @override
   State<AppSidebar> createState() => _AppSidebarState();
@@ -173,7 +180,7 @@ class _AppSidebarState extends State<AppSidebar> {
             _SidebarTile(
               icon: Icons.settings_outlined,
               label: 'Settings',
-              onTap: () => Navigator.of(context).pop(),
+              onTap: () => _closeThen(widget.onSettingsTap),
             ),
             _SidebarTile(
               icon: Icons.star_outline_rounded,

@@ -20,6 +20,7 @@ class AppConfig {
   static const String keyPendingVerifyEmail = 'pd_pending_email';
   static const String keyOnboardingSeen = 'pd_onboarding_seen';
   static const String keyCommunityJoinedBefore = 'pd_community_joined_before';
+  static const String keyFeedbackPromptsEnabled = 'pd_feedback_prompts_enabled';
 
   // === gRPC TIMEOUTS ===
   static const Duration grpcConnectTimeout = Duration(seconds: 10);

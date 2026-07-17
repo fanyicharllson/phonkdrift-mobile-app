@@ -9,7 +9,7 @@ import '../../../../core/widgets/phonk_error_banner.dart';
 import '../../../../core/widgets/phonk_toast.dart';
 import '../../data/repositories/track_repository.dart';
 import '../controllers/track_controller.dart';
-import '../widgets/playing_equalizer.dart';
+import '../widgets/track_list_row.dart';
 
 class PlaylistDetailScreen extends StatefulWidget {
   const PlaylistDetailScreen({
@@ -121,14 +121,17 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  // Cover image or gradient
+                  // Custom cover if the backend has one, otherwise a
+                  // collage built from the playlist's own tracks instead of
+                  // a generic gradient every playlist would otherwise share.
                   _coverUrl.isNotEmpty
                       ? CachedNetworkImage(
                           imageUrl: _coverUrl,
                           fit: BoxFit.cover,
-                          errorWidget: (_, __, ___) => _GradientCover(),
+                          errorWidget: (_, __, ___) =>
+                              _PlaylistCoverArt(tracks: _tracks),
                         )
-                      : _GradientCover(),
+                      : _PlaylistCoverArt(tracks: _tracks),
                   // Overlay
                   Container(
                     decoration: BoxDecoration(
@@ -277,30 +280,73 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
               ),
             ),
             SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (_, i) => _PlaylistTrackTile(
-                  track: _tracks[i],
-                  index: i + 1,
-                  isPlaying: widget.controller.nowPlaying?.trackId ==
-                      _tracks[i].trackId,
-                  isLiked: widget.controller.isLiked(_tracks[i].trackId),
+              delegate: SliverChildBuilderDelegate((_, i) {
+                final track = _tracks[i];
+                final isPlaying =
+                    widget.controller.nowPlaying?.trackId == track.trackId;
+                return TrackListRow(
+                  track: track,
+                  leading: TrackRankBadge(rank: i + 1, isPlaying: isPlaying),
+                  isPlaying: isPlaying,
+                  isLiked: widget.controller.isLiked(track.trackId),
                   onTap: () => widget.controller.playTrack(
-                    _tracks[i],
+                    track,
                     context,
                     queue: _tracks,
                   ),
-                  onLike: () =>
-                      widget.controller.toggleLike(_tracks[i].trackId),
-                  onLongPress: () => _confirmRemoveTrack(_tracks[i]),
-                ),
-                childCount: _tracks.length,
-              ),
+                  onLike: () => widget.controller.toggleLike(track.trackId),
+                  onLongPress: () => _confirmRemoveTrack(track),
+                );
+              }, childCount: _tracks.length),
             ),
           ],
 
           const SliverToBoxAdapter(child: SizedBox(height: 160)),
         ],
       ),
+    );
+  }
+}
+
+/// Content-aware playlist cover — a 2x2 collage of the playlist's own track
+/// thumbnails (repeating them to fill all 4 quadrants when there are fewer
+/// than 4, the usual streaming-app convention), so every playlist actually
+/// looks like what's in it instead of sharing one static gradient.
+class _PlaylistCoverArt extends StatelessWidget {
+  const _PlaylistCoverArt({required this.tracks});
+  final List<TrackMetadata> tracks;
+
+  @override
+  Widget build(BuildContext context) {
+    final thumbs = tracks
+        .map((t) => t.thumbnailUrl)
+        .where((u) => u.isNotEmpty)
+        .take(4)
+        .toList();
+    if (thumbs.isEmpty) return _GradientCover();
+    if (thumbs.length == 1) {
+      return CachedNetworkImage(
+        imageUrl: thumbs.first,
+        fit: BoxFit.cover,
+        errorWidget: (_, __, ___) => _GradientCover(),
+      );
+    }
+
+    Widget quadrant(int i) {
+      return CachedNetworkImage(
+        imageUrl: thumbs[i % thumbs.length],
+        fit: BoxFit.cover,
+        errorWidget: (_, __, ___) =>
+            Container(color: AppColors.bgElevated),
+      );
+    }
+
+    return GridView.count(
+      crossAxisCount: 2,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 1,
+      crossAxisSpacing: 1,
+      children: [quadrant(0), quadrant(1), quadrant(2), quadrant(3)],
     );
   }
 }
@@ -319,121 +365,6 @@ class _GradientCover extends StatelessWidget {
       child: const Center(
         child: Icon(Icons.queue_music_rounded,
             color: AppColors.textMuted, size: 48),
-      ),
-    );
-  }
-}
-
-class _PlaylistTrackTile extends StatelessWidget {
-  const _PlaylistTrackTile({
-    required this.track,
-    required this.index,
-    required this.onTap,
-    required this.onLike,
-    required this.onLongPress,
-    this.isPlaying = false,
-    this.isLiked = false,
-  });
-
-  final TrackMetadata track;
-  final int index;
-  final VoidCallback onTap;
-  final VoidCallback onLike;
-  final VoidCallback onLongPress;
-  final bool isPlaying;
-  final bool isLiked;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      onLongPress: () {
-        HapticFeedback.mediumImpact();
-        onLongPress();
-      },
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: isPlaying
-              ? AppColors.phonkRed.withValues(alpha: 0.07)
-              : AppColors.bgSurface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isPlaying
-                ? AppColors.phonkRed.withValues(alpha: 0.3)
-                : AppColors.borderSubtle,
-          ),
-        ),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 28,
-              child: isPlaying
-                  ? const PlayingEqualizer(size: 18)
-                  : Text('$index',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
-                        fontSize: 13, color: AppColors.textMuted,
-                        fontWeight: FontWeight.w600,
-                      )),
-            ),
-            const SizedBox(width: 10),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: track.thumbnailUrl.isNotEmpty
-                  ? CachedNetworkImage(
-                      imageUrl: track.thumbnailUrl,
-                      width: 46, height: 46, fit: BoxFit.cover,
-                      errorWidget: (_, __, ___) => Container(
-                        width: 46, height: 46, color: AppColors.bgElevated,
-                        child: const Icon(Icons.music_note_rounded,
-                            color: AppColors.textMuted, size: 18),
-                      ),
-                    )
-                  : Container(
-                      width: 46, height: 46, color: AppColors.bgElevated,
-                      child: const Icon(Icons.music_note_rounded,
-                          color: AppColors.textMuted, size: 18),
-                    ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(track.title,
-                      maxLines: 1, overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
-                        fontSize: 13, fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      )),
-                  const SizedBox(height: 2),
-                  Text(track.artistName,
-                      style: GoogleFonts.inter(
-                        fontSize: 11, color: AppColors.textMuted,
-                      )),
-                ],
-              ),
-            ),
-            Text(track.duration,
-                style: GoogleFonts.inter(
-                  fontSize: 11, color: AppColors.textMuted,
-                )),
-            const SizedBox(width: 10),
-            GestureDetector(
-              onTap: () {
-                HapticFeedback.mediumImpact();
-                onLike();
-              },
-              child: Icon(
-                isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                color: isLiked ? AppColors.phonkRed : AppColors.textMuted,
-                size: 18,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

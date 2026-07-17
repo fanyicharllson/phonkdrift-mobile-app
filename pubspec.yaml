@@ -55,6 +55,10 @@ dependencies:
   http: ^1.6.0
   firebase_core: ^4.11.0
   firebase_messaging: ^16.4.1
+  package_info_plus: ^8.0.0
+  pub_semver: ^2.1.4
+  path_provider: ^2.1.5
+  open_filex: ^4.5.0
 
 dev_dependencies:
   flutter_test:

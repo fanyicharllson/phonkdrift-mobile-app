@@ -38,6 +38,11 @@ class StorageHelper {
   Future<void> markCommunityJoinedBefore() =>
       _storage.write(key: AppConfig.keyCommunityJoinedBefore, value: 'true');
 
+  Future<void> setFeedbackPromptsEnabled(bool enabled) => _storage.write(
+    key: AppConfig.keyFeedbackPromptsEnabled,
+    value: enabled.toString(),
+  );
+
   Future<void> saveSession({
     required String token,
     required String userId,
@@ -81,6 +86,17 @@ class StorageHelper {
       return val == 'true';
     } catch (_) {
       return false;
+    }
+  }
+
+  /// Defaults to true (opt-out) — most users never touch this, and we'd
+  /// rather keep collecting feedback unless someone explicitly turns it off.
+  Future<bool> getFeedbackPromptsEnabled() async {
+    try {
+      final val = await _storage.read(key: AppConfig.keyFeedbackPromptsEnabled);
+      return val != 'false';
+    } catch (_) {
+      return true;
     }
   }
 
