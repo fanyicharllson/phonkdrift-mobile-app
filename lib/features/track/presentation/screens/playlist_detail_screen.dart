@@ -118,6 +118,21 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
             ),
             flexibleSpace: FlexibleSpaceBar(
               collapseMode: CollapseMode.parallax,
+              // Fades into the pinned toolbar once the parallax cover (and
+              // the title sitting on top of it) scrolls out of view — so
+              // the playlist name/track count never fully disappear.
+              title: Text(
+                _tracks.isEmpty
+                    ? widget.playlistName
+                    : '${widget.playlistName} · ${_tracks.length} tracks',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.inter(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+              ),
               background: Stack(
                 fit: StackFit.expand,
                 children: [
