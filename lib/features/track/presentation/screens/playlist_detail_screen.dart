@@ -118,9 +118,17 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
             ),
             flexibleSpace: FlexibleSpaceBar(
               collapseMode: CollapseMode.parallax,
-              // Fades into the pinned toolbar once the parallax cover (and
-              // the title sitting on top of it) scrolls out of view — so
-              // the playlist name/track count never fully disappear.
+              // This is the ONLY place the title is drawn — FlexibleSpaceBar
+              // animates it itself: large and bottom-anchored over the cover
+              // while expanded, shrinking into the pinned toolbar on scroll.
+              // (A second, separately-positioned title used to also live in
+              // the background Stack below, which duplicated this one.)
+              titlePadding: const EdgeInsetsDirectional.only(
+                start: 24,
+                bottom: 16,
+                end: 24,
+              ),
+              expandedTitleScale: 1.3,
               title: Text(
                 _tracks.isEmpty
                     ? widget.playlistName
@@ -128,7 +136,7 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.inter(
-                  fontSize: 15,
+                  fontSize: 16,
                   fontWeight: FontWeight.w800,
                   color: AppColors.textPrimary,
                 ),
@@ -147,7 +155,9 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                               _PlaylistCoverArt(tracks: _tracks),
                         )
                       : _PlaylistCoverArt(tracks: _tracks),
-                  // Overlay
+                  // Overlay — also gives the FlexibleSpaceBar title (drawn
+                  // on top by the framework) enough contrast to read while
+                  // expanded over the cover art.
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -158,26 +168,6 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                           AppColors.bgDeep,
                         ],
                       ),
-                    ),
-                  ),
-                  // Title bottom
-                  Positioned(
-                    left: 24, right: 24, bottom: 16,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(widget.playlistName,
-                            style: GoogleFonts.inter(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w900,
-                              color: AppColors.textPrimary,
-                              letterSpacing: -0.8,
-                            )),
-                        Text('${_tracks.length} tracks',
-                            style: GoogleFonts.inter(
-                              fontSize: 13, color: AppColors.textSecondary,
-                            )),
-                      ],
                     ),
                   ),
                 ],

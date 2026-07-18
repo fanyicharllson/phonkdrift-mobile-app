@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/utils/storage_helper.dart';
+import '../../../auth/presentation/screens/about_screen.dart';
 import '../../../auth/presentation/screens/login_screen.dart';
 import 'feedback_prompt_sheet.dart';
 
@@ -190,7 +191,11 @@ class _AppSidebarState extends State<AppSidebar> {
             _SidebarTile(
               icon: Icons.info_outline_rounded,
               label: 'About PhonkDrift',
-              onTap: () => Navigator.of(context).pop(),
+              onTap: () => _closeThen(
+                () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AboutScreen()),
+                ),
+              ),
             ),
 
             const Spacer(),
