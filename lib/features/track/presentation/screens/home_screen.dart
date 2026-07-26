@@ -649,7 +649,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         itemBuilder: (_, i) {
           final selected = _selectedCategory == i;
           return GestureDetector(
-            onTap: () => setState(() => _selectedCategory = i),
+            onTap: () {
+              setState(() => _selectedCategory = i);
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => TrendingScreen(
+                    controller: _controller,
+                    initialCategory: _categories[i],
+                  ),
+                ),
+              );
+            },
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               margin: const EdgeInsets.only(right: 10, top: 4, bottom: 4),

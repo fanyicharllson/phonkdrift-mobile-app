@@ -123,8 +123,11 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
               // while expanded, shrinking into the pinned toolbar on scroll.
               // (A second, separately-positioned title used to also live in
               // the background Stack below, which duplicated this one.)
+              // start clears the ~58px leading back-button — too small a
+              // value here (previously 24) let the title start underneath
+              // it, clipping the first letter of the playlist name.
               titlePadding: const EdgeInsetsDirectional.only(
-                start: 24,
+                start: 72,
                 bottom: 16,
                 end: 24,
               ),

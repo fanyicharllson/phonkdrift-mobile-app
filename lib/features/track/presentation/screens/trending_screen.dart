@@ -7,8 +7,15 @@ import '../../data/repositories/track_repository.dart';
 import '../controllers/track_controller.dart';
 import '../widgets/track_list_row.dart';
 
+const kTrendingCategories = ['All', 'Trending', 'New', 'Underground'];
+
 class TrendingScreen extends StatefulWidget {
-  const TrendingScreen({super.key, required this.controller, this.focusTrackId});
+  const TrendingScreen({
+    super.key,
+    required this.controller,
+    this.focusTrackId,
+    this.initialCategory = 'All',
+  });
   final TrackController controller;
 
   /// When set, once the list loads this screen scrolls to and briefly
@@ -17,6 +24,10 @@ class TrendingScreen extends StatefulWidget {
   /// works if the track happens to be in this batch; it's a graceful no-op
   /// otherwise (no crash, nothing weird — just an unhighlighted list).
   final String? focusTrackId;
+
+  /// Pre-selects one of [kTrendingCategories] — set when arriving here from
+  /// Home's category pills instead of the default "Trending Phonk" tap.
+  final String initialCategory;
 
   @override
   State<TrendingScreen> createState() => _TrendingScreenState();
@@ -30,6 +41,7 @@ class _TrendingScreenState extends State<TrendingScreen> {
   final _searchCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
   String? _highlightedTrackId;
+  late String _selectedCategory = widget.initialCategory;
 
   @override
   void initState() {
@@ -69,7 +81,7 @@ class _TrendingScreenState extends State<TrendingScreen> {
       _error = '';
       if (hasCache) {
         _allTracks = cached;
-        _filtered = cached;
+        _filtered = _computeFiltered();
       }
     });
     if (hasCache) _scrollToFocusTrackIfAny();
@@ -79,7 +91,7 @@ class _TrendingScreenState extends State<TrendingScreen> {
       if (mounted) {
         setState(() {
           _allTracks = res;
-          _filtered = res;
+          _filtered = _computeFiltered();
           _isLoading = false;
         });
         if (!hasCache) _scrollToFocusTrackIfAny();
@@ -124,18 +136,50 @@ class _TrendingScreenState extends State<TrendingScreen> {
   }
 
   void _onSearch(String val) {
-    final q = val.trim().toLowerCase();
+    setState(() => _filtered = _computeFiltered());
+  }
+
+  void _onSelectCategory(String category) {
     setState(() {
-      _filtered = q.isEmpty
-          ? _allTracks
-          : _allTracks
-                .where(
-                  (t) =>
-                      t.title.toLowerCase().contains(q) ||
-                      t.artistName.toLowerCase().contains(q),
-                )
-                .toList();
+      _selectedCategory = category;
+      _filtered = _computeFiltered();
     });
+  }
+
+  /// Combines the category sort/filter with the search query — search
+  /// narrows within whichever category is active, not the other way round.
+  ///
+  /// "New" can't be genuinely sorted by upload recency: the backend's
+  /// TrackMetadata has no timestamp field, so it falls back to the same
+  /// order as "All" rather than faking a recency signal that isn't there.
+  List<TrackMetadata> _computeFiltered() {
+    List<TrackMetadata> result = _allTracks;
+    switch (_selectedCategory) {
+      case 'Trending':
+        result = [...result]
+          ..sort((a, b) => b.playCount.compareTo(a.playCount));
+        break;
+      case 'Underground':
+        result = [...result]
+          ..sort((a, b) => a.playCount.compareTo(b.playCount));
+        break;
+      case 'New':
+      case 'All':
+      default:
+        break;
+    }
+
+    final q = _searchCtrl.text.trim().toLowerCase();
+    if (q.isNotEmpty) {
+      result = result
+          .where(
+            (t) =>
+                t.title.toLowerCase().contains(q) ||
+                t.artistName.toLowerCase().contains(q),
+          )
+          .toList();
+    }
+    return result;
   }
 
   @override
@@ -340,6 +384,63 @@ class _TrendingScreenState extends State<TrendingScreen> {
 
                 const SizedBox(height: 12),
 
+                // ── Category pills ──────────────────────────────────────────
+                SizedBox(
+                  height: 40,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: kTrendingCategories.length,
+                    itemBuilder: (_, i) {
+                      final category = kTrendingCategories[i];
+                      final selected = _selectedCategory == category;
+                      return GestureDetector(
+                        onTap: () => _onSelectCategory(category),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          margin: const EdgeInsets.only(right: 10),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: selected
+                                ? AppColors.phonkRed
+                                : AppColors.bgSurface,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: selected
+                                  ? AppColors.phonkRed
+                                  : AppColors.borderSubtle,
+                            ),
+                            boxShadow: selected
+                                ? [
+                                    BoxShadow(
+                                      color: AppColors.phonkRed.withValues(
+                                        alpha: 0.3,
+                                      ),
+                                      blurRadius: 10,
+                                    ),
+                                  ]
+                                : [],
+                          ),
+                          child: Text(
+                            category,
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: selected
+                                  ? Colors.white
+                                  : AppColors.textSecondary,
+                              height: 1.0,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
                 // ── Track list ─────────────────────────────────────────────
                 Expanded(
                   child: _isLoading
@@ -383,7 +484,9 @@ class _TrendingScreenState extends State<TrendingScreen> {
                       : _filtered.isEmpty
                       ? Center(
                           child: Text(
-                            'No tracks match "${_searchCtrl.text}"',
+                            _searchCtrl.text.isNotEmpty
+                                ? 'No tracks match "${_searchCtrl.text}"'
+                                : 'No tracks in "$_selectedCategory" yet.',
                             style: GoogleFonts.inter(
                               fontSize: 14,
                               color: AppColors.textSecondary,
@@ -408,8 +511,13 @@ class _TrendingScreenState extends State<TrendingScreen> {
                                 track: track,
                                 showPlayCount: true,
                                 showPlayIndicator: true,
+                                // Position within the currently displayed
+                                // (category-sorted/searched) list — not the
+                                // original "All" order, so the rank stays
+                                // meaningful once Trending/Underground
+                                // resorts the list.
                                 leading: TrackRankBadge(
-                                  rank: _allTracks.indexOf(track) + 1,
+                                  rank: i + 1,
                                   isPlaying: isPlaying,
                                 ),
                                 isPlaying: isPlaying,
