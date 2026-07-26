@@ -55,7 +55,14 @@ android {
         release {
             signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
-            isShrinkResources = true
+            // OFF: the resource shrinker only sees static references, but
+            // just_audio_background resolves its notification icon
+            // dynamically (getIdentifier("ic_notification", "drawable", ...)
+            // at runtime) — the shrinker can't see that, stripped the
+            // drawable as "unused", and the app crashed on first play with
+            // "Invalid notification (no valid small icon)". Code shrinking
+            // (isMinifyEnabled) is unaffected and stays on.
+            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
